@@ -28,6 +28,14 @@ type DeckMessage =
     candidate: { id: string; ref: string; digest: string }
     note: { sourceText: string; note: string }
   }
+  | {
+    type: 'review-deck:navigate'
+    navigation: {
+      kind: 'source' | 'topic' | 'article' | 'digest'
+      target: string
+      anchor?: string
+    }
+  }
 
 const REUSE_VALUES: Record<string, string> = {
   文章: 'article',
@@ -54,6 +62,7 @@ function isDeckMessage(value: unknown): value is DeckMessage {
   return type === 'review-deck:ready'
     || type === 'review-deck:save-decision'
     || type === 'review-deck:save-note'
+    || type === 'review-deck:navigate'
 }
 
 export function ReviewDeckPresentation({
@@ -62,6 +71,7 @@ export function ReviewDeckPresentation({
   readNote,
   refreshVault,
   writeNote,
+  navigateNote,
 }: CollectionPresentationProviderProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
@@ -123,6 +133,24 @@ export function ReviewDeckPresentation({
         postCandidates()
         return
       }
+      if (event.data.type === 'review-deck:navigate') {
+        void navigateNote({
+          target: event.data.navigation.target,
+          anchor: event.data.navigation.anchor,
+        }).then((opened) => {
+          if (opened) return
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'review-deck:navigation-error',
+            message: '目标笔记尚未建立或不在当前知识库中',
+          }, window.location.origin)
+        }).catch((error) => {
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'review-deck:navigation-error',
+            message: error instanceof Error ? error.message : String(error),
+          }, window.location.origin)
+        })
+        return
+      }
 
       const message = event.data
       saveQueueRef.current = saveQueueRef.current.then(async () => {
@@ -152,7 +180,7 @@ export function ReviewDeckPresentation({
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [postCandidates, readNote, refreshVault, writeNote])
+  }, [navigateNote, postCandidates, readNote, refreshVault, writeNote])
 
   if (candidates === null) {
     return <div className="review-deck-presentation-state">正在加载审阅卡片...</div>

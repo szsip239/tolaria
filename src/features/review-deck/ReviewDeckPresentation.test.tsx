@@ -54,6 +54,7 @@ const props: CollectionPresentationProviderProps = {
   readNote: vi.fn(),
   writeNote: vi.fn(),
   refreshVault: vi.fn(),
+  navigateNote: vi.fn(),
 }
 
 describe('ReviewDeckPresentation', () => {
@@ -114,5 +115,35 @@ describe('ReviewDeckPresentation', () => {
 
     await waitFor(() => expect(saveCandidate).toHaveBeenCalledOnce())
     expect(refreshVault).toHaveBeenCalledOnce()
+  })
+
+  it('routes Deck source, topic, article, and digest-anchor navigation through Tolaria', async () => {
+    loadCandidates.mockResolvedValue([{
+      id: 'article#A001',
+      ref: 'article-A001',
+      digest: '/vault/articles/example/digest.md',
+    } as ReviewDeckCandidate])
+    const navigateNote = vi.fn(async () => true)
+
+    render(<ReviewDeckPresentation {...props} navigateNote={navigateNote} />)
+
+    const frame = await screen.findByTitle('Atom 审阅') as HTMLIFrameElement
+    window.dispatchEvent(new MessageEvent('message', {
+      source: frame.contentWindow,
+      origin: window.location.origin,
+      data: {
+        type: 'review-deck:navigate',
+        navigation: {
+          kind: 'digest',
+          target: '/vault/articles/example/digest.md',
+          anchor: 'article-A001',
+        },
+      },
+    }))
+
+    await waitFor(() => expect(navigateNote).toHaveBeenCalledWith({
+      target: '/vault/articles/example/digest.md',
+      anchor: 'article-A001',
+    }))
   })
 })

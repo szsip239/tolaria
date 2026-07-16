@@ -10,6 +10,12 @@ export interface CollectionPresentationProviderProps {
   readNote: (path: string) => Promise<string>
   writeNote: (path: string, content: string) => Promise<void>
   refreshVault: () => Promise<unknown>
+  navigateNote: (request: CollectionNoteNavigationRequest) => Promise<boolean>
+}
+
+export interface CollectionNoteNavigationRequest {
+  target: string
+  anchor?: string
 }
 
 export type CollectionPresentationProvider = ComponentType<CollectionPresentationProviderProps>

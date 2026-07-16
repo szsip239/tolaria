@@ -31,7 +31,13 @@ The Rust View model preserves the presentation type and flattened provider confi
 
 1. The normalized collection and its resolved entries.
 2. Loading and active-vault context.
-3. Narrow note read, note write, and vault refresh callbacks.
+3. Narrow note read, note write, vault refresh, and note navigation callbacks.
+
+The navigation callback resolves only indexed vault notes, exits the custom
+presentation into Tolaria's normal entity/editor workspace, and may carry a
+stable text anchor. Anchored navigation is fulfilled by the rich editor after
+the target note finishes mounting; providers do not receive direct editor or
+DOM access.
 
 Saved YAML does not load modules, scripts, URLs, or commands. An unknown provider id renders through the existing list/editor fallback. Provider-specific domain parsing stays outside the generic collection model.
 
@@ -46,6 +52,7 @@ Saved YAML does not load modules, scripts, URLs, or commands. An unknown provide
 
 - Existing lists, Inbox, Changes, Pulse, folders, and Neighborhood keep their current behavior.
 - New bundled presentations reuse the same saved View filters and note write path instead of creating another data store.
+- A presentation can open a source, topic, or digest through Tolaria's normal navigation path without controlling tabs or editor internals directly.
 - Provider registrations are code-reviewed application code; saved vault content selects only an installed id and declarative options.
 - Domain-specific providers may remain private while the host seam can be proposed upstream independently.
 - A public community plugin API is still deferred until provider lifecycle and capability needs are demonstrated by more than one internal presentation.

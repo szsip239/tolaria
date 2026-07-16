@@ -18,8 +18,10 @@ export interface ReviewDeckCandidate {
   articleTitle: string
   articleSummary: string
   source: string
+  sourceTarget: string
   type: string
   topic: string
+  topicTarget: string
   digest: string
   original: string
   prev: string
@@ -101,6 +103,16 @@ function stringList(value: unknown): string[] {
     .split(/[,，、]/)
     .map((item) => item.trim().replace(/^['"]|['"]$/g, ''))
     .filter(Boolean)
+}
+
+function wikilinkTarget(value: unknown): string {
+  const match = scalar(value).trim().match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/)
+  return match?.[1]?.trim() ?? ''
+}
+
+function topicWikilinkTarget(value: unknown): string {
+  const targets = Array.isArray(value) ? value.map(wikilinkTarget) : [wikilinkTarget(value)]
+  return targets.find((target) => /(^|\/)topics?\//i.test(target)) ?? ''
 }
 
 function normalizeMarkdown(value: string): string {
@@ -302,6 +314,7 @@ async function candidatesFromDigest(
   const summary = normalizeMarkdown(markdownSection(digest.body, /文章摘要|摘要/))
   const title = articleTitle(digest.frontmatter, entry.path)
   const relations = relationText(digest.body)
+  const sourceTarget = wikilinkTarget(digest.frontmatter.source) || originalPath
 
   return parseAtomBlocks(digest.body).map((atom) => {
     const atomId = scalar(atom.attributes.atom_id) || atom.ref
@@ -317,8 +330,11 @@ async function candidatesFromDigest(
       articleTitle: title,
       articleSummary: summary,
       source: scalar(digest.frontmatter.source_title) || title,
+      sourceTarget,
       type: scalar(atom.attributes.atom_type) || '观点',
       topic: topicFrom(digest.frontmatter, atom.attributes),
+      topicTarget: topicWikilinkTarget(atom.attributes.related_to)
+        || topicWikilinkTarget(digest.frontmatter.related_to),
       digest: entry.path,
       original: originalPath,
       ...context,

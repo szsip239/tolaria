@@ -24,6 +24,7 @@ import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
 import { useEditorTheme } from '../hooks/useTheme'
 import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
 import { useImageLightbox } from '../hooks/useImageLightbox'
+import { useEditorAnchorNavigation } from '../hooks/useEditorAnchorNavigation'
 import { createTranslator, type AppLocale } from '../lib/i18n'
 import { writeClipboardText } from '../utils/clipboardText'
 import { buildTypeEntryMap } from '../utils/typeColors'
@@ -1212,6 +1213,12 @@ export function SingleEditorView({ currentContent = '', editor, entries, onNavig
   } = useCodeBlockCopyTarget(containerRef)
   useBlockNoteSideMenuHoverGuard(containerRef)
   useEditorLinkActivation(containerRef, onNavigateWikilink, vaultPath, sourceEntry?.path)
+  useEditorAnchorNavigation({
+    containerRef,
+    currentContent,
+    editor,
+    path: sourceEntry?.path,
+  })
 
   useEffect(() => {
     _wikilinkEntriesRef.current = entries

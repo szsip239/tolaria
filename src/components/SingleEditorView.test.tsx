@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VaultEntry } from '../types'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
 import { insertPlainTextFromClipboardText } from '../utils/plainTextPaste'
+import { requestEditorAnchorNavigation } from '../utils/editorAnchorNavigation'
 import { SingleEditorView } from './SingleEditorView'
 import { TooltipProvider } from './ui/tooltip'
 
@@ -121,6 +122,45 @@ describe('SingleEditorView', () => {
     } finally {
       consoleError.mockRestore()
     }
+  })
+
+  it('focuses and centers a requested stable atom reference after its digest opens', async () => {
+    const editor = createEditor()
+    editor.document = [{
+      id: 'atom-block',
+      type: 'bulletListItem',
+      content: [{ type: 'text', text: '#atom $article-ai-A001 把最终判断保留在人这一侧' }],
+      children: [],
+    }]
+    const sourceEntry = makeEntry({ path: '/vault/articles/AI协作/digest.md' })
+
+    render(
+      <SingleEditorView
+        currentContent="# digest"
+        editor={editor as never}
+        entries={[sourceEntry]}
+        onNavigateWikilink={vi.fn()}
+        sourceEntry={sourceEntry}
+      />,
+    )
+
+    const container = screen.getByTestId('blocknote-view').closest('.editor__blocknote-container')
+    const block = document.createElement('div')
+    block.dataset.id = 'atom-block'
+    block.scrollIntoView = vi.fn()
+    container?.appendChild(block)
+
+    act(() => {
+      requestEditorAnchorNavigation({
+        path: sourceEntry.path,
+        anchor: 'article-ai-A001',
+      })
+    })
+
+    await waitFor(() => {
+      expect(editor.setTextCursorPosition).toHaveBeenCalledWith('atom-block', 'start')
+      expect(block.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
+    })
   })
 
   it('remounts after a BlockNote table row index render error', async () => {

@@ -391,10 +391,26 @@
     }
 
     .source-title {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
       color: var(--fg);
+      cursor: pointer;
+      font-family: inherit;
       font-size: var(--text-md);
       font-weight: 500;
       line-height: 1.25;
+      text-align: left;
+    }
+
+    .source-title:hover,
+    .source-title:focus-visible,
+    .inline-note-link:hover,
+    .inline-note-link:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
 
     .tag {
@@ -410,6 +426,13 @@
       line-height: 1;
       letter-spacing: var(--tracking-label);
       white-space: nowrap;
+    }
+
+    button.tag {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
     }
 
     .meta-line {
@@ -808,6 +831,16 @@
       color: var(--muted);
     }
 
+    .inline-note-link {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+    }
+
     .decision {
       border-top: 1px solid var(--border);
       padding: 14px 22px 15px;
@@ -1190,9 +1223,9 @@
         <header class="card-head">
           <div>
             <div class="source-line">
-              <span class="source-title" id="sourceTitle">Tolaria 学习拆解：内容资产工程</span>
+              <button class="source-title" id="sourceTitle" type="button">Tolaria 学习拆解：内容资产工程</button>
               <span class="tag" id="atomType">判断</span>
-              <span class="tag" id="topicTag">内容资产工程</span>
+              <button class="tag" id="topicTag" type="button">内容资产工程</button>
             </div>
             <div class="meta-line" id="sourceMeta">原文 articles/content-asset-engineering.md · 拆解稿 digest/content-asset-engineering.md</div>
             <div class="atom-strip" id="atomStrip" aria-label="当前文章候选观点"></div>
@@ -1587,6 +1620,35 @@
       state.viewMode = mode;
       persist();
       render(true);
+    }
+
+    function requestNavigation(kind, target, anchor = "") {
+      if (!target) {
+        showToast(kind === "topic" ? "当前 Topic 笔记尚未建立" : "当前目标笔记不可用");
+        return;
+      }
+      window.parent.postMessage({
+        type: "review-deck:navigate",
+        navigation: { kind, target, anchor }
+      }, window.location.origin);
+    }
+
+    function renderMetaNavigation(item, group, articleIndex, atomIndex, articleCount, atomCount) {
+      const prefix = document.createTextNode(`文章 ${articleIndex + 1}/${articleCount} · Atom ${atomIndex + 1}/${atomCount} · `);
+      const articleButton = document.createElement("button");
+      articleButton.className = "inline-note-link";
+      articleButton.type = "button";
+      articleButton.textContent = "打开文章";
+      articleButton.addEventListener("click", () => requestNavigation("article", group.original));
+
+      const separator = document.createTextNode(" · ");
+      const digestButton = document.createElement("button");
+      digestButton.className = "inline-note-link";
+      digestButton.type = "button";
+      digestButton.textContent = "定位拆解稿";
+      digestButton.addEventListener("click", () => requestNavigation("digest", group.digest, item.ref));
+
+      els.sourceMeta.replaceChildren(prefix, articleButton, separator, digestButton);
     }
 
     function neighborIndex(delta) {
@@ -2030,7 +2092,7 @@
       els.sourceTitle.textContent = group.title;
       els.atomType.textContent = item.type;
       els.topicTag.textContent = item.topic;
-      els.sourceMeta.textContent = `文章 ${articleIndex + 1}/${groups.length} · Atom ${atomIndex + 1}/${group.indices.length} · 原文 ${group.original} · 拆解稿 ${group.digest}`;
+      renderMetaNavigation(item, group, articleIndex, atomIndex, groups.length, group.indices.length);
       els.progressText.textContent = `A${articleIndex + 1} · ${atomIndex + 1}/${group.indices.length}`;
       if (state.viewMode === "digest") {
         renderDigestView(item, group);
@@ -2137,6 +2199,14 @@
     els.resetContextBtn.addEventListener("click", () => resetContext("smooth"));
     els.atomViewBtn.addEventListener("click", () => setViewMode("atom"));
     els.openDigestBtn.addEventListener("click", () => setViewMode("digest"));
+    els.sourceTitle.addEventListener("click", () => {
+      const item = candidates[state.index];
+      requestNavigation("source", item.sourceTarget || item.original);
+    });
+    els.topicTag.addEventListener("click", () => {
+      const item = candidates[state.index];
+      requestNavigation("topic", item.topicTarget);
+    });
     els.contextScroll.addEventListener("mouseup", () => setTimeout(handleTextSelection, 0));
     els.contextScroll.addEventListener("mouseover", (event) => {
       const mark = event.target.closest?.(".highlight-note:not(.pending)");
@@ -2180,6 +2250,9 @@
           renderStatus();
         }
         showToast(event.data.message || "写回拆解稿失败");
+      }
+      if (event.data.type === "review-deck:navigation-error") {
+        showToast(event.data.message || "目标笔记不可用");
       }
     });
 

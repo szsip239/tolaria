@@ -13,6 +13,7 @@ type: 文章拆解
 article_id: article-ai
 title: AI 协作 · 拆解综述
 source: "[[articles/AI协作/content]]"
+related_to: "[[topics/AI 信任与协作哲学]]"
 atom_review_notes:
   article-ai-A001:
     - type: mysoul/reading-note
@@ -84,6 +85,8 @@ describe('reviewDeckAdapter', () => {
       ref: 'article-ai-A001',
       articleId: 'article-ai',
       articleTitle: 'AI 协作',
+      sourceTarget: 'articles/AI协作/content',
+      topicTarget: 'topics/AI 信任与协作哲学',
       claim: 'AI 可以生成候选方案，但人必须保留最终判断。',
       evidence: '人必须保留最终判断。',
       action: 'inbox',

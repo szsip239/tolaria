@@ -121,7 +121,9 @@ import {
   resolveCollectionPresentationProvider,
 } from './collections/collectionPresentationHost'
 import { collectionPresentationProviders } from './collections/collectionPresentationProviders'
-import { notePathsMatch } from './utils/notePathIdentity'
+import { findByNotePath, notePathsMatch } from './utils/notePathIdentity'
+import { resolveEntry } from './utils/wikilink'
+import { requestEditorAnchorNavigation } from './utils/editorAnchorNavigation'
 import { activeGitRepositories } from './utils/gitRepositories'
 import { isMarkdownEntry } from './utils/typeDefinitions'
 import type { RichEditorBlockTypeDefinition } from './utils/richEditorBlockTypes'
@@ -571,6 +573,29 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     markRecentVaultWrite(path)
     await saveCollectionNote(path, content)
   }, [markRecentVaultWrite, saveCollectionNote])
+  const navigateCollectionNote = useCallback(async ({
+    target,
+    anchor,
+  }: {
+    target: string
+    anchor?: string
+  }) => {
+    const entry = findByNotePath(visibleEntries, target) ?? resolveEntry(visibleEntries, target)
+    if (!entry) return false
+
+    if (anchor) {
+      requestEditorAnchorNavigation({ path: entry.path, anchor })
+    }
+    handleSetSelection({ kind: 'entity', entry })
+    await handleSelectNote(entry)
+    trackEvent('collection_presentation_note_opened', {
+      anchored: anchor ? 1 : 0,
+      provider: activeCollection.presentation.type === 'custom'
+        ? activeCollection.presentation.provider
+        : 'unknown',
+    })
+    return true
+  }, [activeCollection.presentation, handleSelectNote, handleSetSelection, visibleEntries])
   const refocusActiveEditor = useCallback((path: string) => {
     window.dispatchEvent(new CustomEvent('laputa:focus-editor', { detail: { path } }))
   }, [])
@@ -1697,6 +1722,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
                 readNote={readCollectionNote}
                 writeNote={writeCollectionNote}
                 refreshVault={vault.reloadVault}
+                navigateNote={navigateCollectionNote}
               />
             </div>
           )}
