@@ -298,6 +298,11 @@ export interface FilterCondition {
 export type FilterGroup = { all: FilterNode[] } | { any: FilterNode[] }
 export type FilterNode = FilterCondition | FilterGroup
 
+export interface ViewPresentationDefinition {
+  type: string
+  [key: string]: unknown
+}
+
 export interface ViewDefinition {
   name: string
   icon: string | null
@@ -306,6 +311,7 @@ export interface ViewDefinition {
   order?: number | null
   sort: string | null
   listPropertiesDisplay?: string[]
+  presentation?: ViewPresentationDefinition | null
   filters: FilterGroup
 }
 

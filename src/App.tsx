@@ -63,6 +63,8 @@ import { useSavedViewOrdering } from './hooks/useSavedViewOrdering'
 import { useAppViewActions } from './hooks/useAppViewActions'
 import { useAppWindowControls } from './hooks/useAppWindowControls'
 import { useAiWorkspacePublishedContext } from './hooks/useAiWorkspacePublishedContext'
+import { loadNoteContent } from './hooks/useNoteRename'
+import { useSaveNote } from './hooks/useSaveNote'
 import {
   useNeighborhoodEntry,
   useNeighborhoodEscape,
@@ -113,6 +115,12 @@ import { SETTINGS_SECTION_IDS } from './components/settingsSectionIds'
 import {
   vaultPathForEntry,
 } from './utils/workspaces'
+import { collectionFromSelection } from './collections/collectionFromSelection'
+import {
+  CollectionPresentationHost,
+  resolveCollectionPresentationProvider,
+} from './collections/collectionPresentationHost'
+import { collectionPresentationProviders } from './collections/collectionPresentationProviders'
 import { notePathsMatch } from './utils/notePathIdentity'
 import { activeGitRepositories } from './utils/gitRepositories'
 import { isMarkdownEntry } from './utils/typeDefinitions'
@@ -380,6 +388,15 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   const explicitOrganizationEnabled = isExplicitOrganizationEnabled(vaultConfig.inbox?.explicitOrganization)
   const effectiveSelection = sanitizeSelectionForOrganization(selection, vaultConfig.inbox?.explicitOrganization)
   const isChangesSelection = effectiveSelection.kind === 'filter' && effectiveSelection.filter === 'changes'
+  const activeCollection = useMemo(
+    () => collectionFromSelection(effectiveSelection, { views: vault.views }),
+    [effectiveSelection, vault.views],
+  )
+  const hasActiveCollectionPresentation = Boolean(resolveCollectionPresentationProvider(
+    activeCollection,
+    collectionPresentationProviders,
+  ))
+  const readCollectionNote = useCallback((path: string) => loadNoteContent({ path }), [])
 
   useSelectionSanitizer({
     effectiveSelection,
@@ -536,6 +553,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     handleReplaceActiveTab,
     closeAllTabs,
     openTabWithContent,
+    setTabs: setNoteTabs,
   } = notes
   const noteActiveTabPath = notes.activeTabPath
   const noteActiveTabPathRef = notes.activeTabPathRef
@@ -543,6 +561,16 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   useEffect(() => {
     noteTabsRef.current = notes.tabs
   }, [notes.tabs])
+  const updateCollectionTabContent = useCallback((path: string, content: string) => {
+    setNoteTabs((tabs) => tabs.map((tab) => (
+      notePathsMatch(tab.entry.path, path) ? { ...tab, content } : tab
+    )))
+  }, [setNoteTabs])
+  const { saveNote: saveCollectionNote } = useSaveNote(updateCollectionTabContent)
+  const writeCollectionNote = useCallback(async (path: string, content: string) => {
+    markRecentVaultWrite(path)
+    await saveCollectionNote(path, content)
+  }, [markRecentVaultWrite, saveCollectionNote])
   const refocusActiveEditor = useCallback((path: string) => {
     window.dispatchEvent(new CustomEvent('laputa:focus-editor', { detail: { path } }))
   }, [])
@@ -1658,7 +1686,21 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
               <ResizeHandle onResize={layout.handleSidebarResize} />
             </>
           )}
-          {noteListVisible && (
+          {hasActiveCollectionPresentation && (
+            <div className="app__collection-presentation">
+              <CollectionPresentationHost
+                collection={activeCollection}
+                entries={visibleEntries}
+                loading={isVaultContentLoading}
+                providers={collectionPresentationProviders}
+                vaultPath={resolvedPath || null}
+                readNote={readCollectionNote}
+                writeNote={writeCollectionNote}
+                refreshVault={vault.reloadVault}
+              />
+            </div>
+          )}
+          {!hasActiveCollectionPresentation && noteListVisible && (
             <>
               <div className={`app__note-list${aiActivity.highlightElement === 'notelist' ? ' ai-highlight' : ''}`} style={{ width: layout.noteListWidth }}>
                 {effectiveSelection.kind === 'filter' && effectiveSelection.filter === 'pulse' ? (
@@ -1670,8 +1712,9 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>
           )}
-          <div className={`app__editor${aiActivity.highlightElement === 'editor' || aiActivity.highlightElement === 'tab' ? ' ai-highlight' : ''}`}>
-            <Editor
+          {!hasActiveCollectionPresentation && (
+            <div className={`app__editor${aiActivity.highlightElement === 'editor' || aiActivity.highlightElement === 'tab' ? ' ai-highlight' : ''}`}>
+              <Editor
               tabs={notes.tabs}
               activeTabPath={notes.activeTabPath}
               isVaultLoading={isVaultContentLoading}
@@ -1747,8 +1790,9 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
               flushPendingRawContentRef={flushPendingRawContentRef}
               onToast={setToastMessage}
               locale={appLocale}
-            />
-          </div>
+              />
+            </div>
+          )}
         </div>
         <UpdateBanner status={updateStatus} actions={updateActions} locale={appLocale} />
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />

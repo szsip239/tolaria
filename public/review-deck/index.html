@@ -1,0 +1,2190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>候选观点审阅 Deck MVP</title>
+  <style>
+    :root {
+      --bg: #f5f4ed;
+      --surface: #faf9f5;
+      --surface-warm: #e8e6dc;
+      --fg: #141413;
+      --fg-2: #3d3d3a;
+      --muted: #504e49;
+      --meta: #6b6a64;
+      --border: #e8e6dc;
+      --border-soft: #e5e3d8;
+      --accent: #1b365d;
+      --accent-on: #faf9f5;
+      --accent-light: #2d5a8a;
+      --accent-hover: var(--accent);
+      --accent-active: #142a48;
+      --success: #4a6b3a;
+      --warn: #8a6b1f;
+      --danger: #8a3a30;
+      --font-display:
+        Charter, Georgia, Palatino, "Times New Roman", serif;
+      --font-body:
+        Charter, Georgia, Palatino, "Times New Roman", serif;
+      --font-mono:
+        "JetBrains Mono", "SF Mono", "Fira Code", Consolas, Monaco,
+        "TsangerJinKai02", "Source Han Serif SC", monospace;
+      --text-xs: 11px;
+      --text-sm: 12px;
+      --text-base: 14px;
+      --text-md: 15px;
+      --text-lg: 17px;
+      --text-xl: 22px;
+      --text-2xl: 32px;
+      --text-3xl: 48px;
+      --text-4xl: 96px;
+      --leading-display: 1.1;
+      --leading-tight: 1.25;
+      --leading-body: 1.55;
+      --leading-dense: 1.4;
+      --tracking-display: 0;
+      --tracking-eyebrow: 1.2px;
+      --tracking-label: 0.4px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 28px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --space-18: 72px;
+      --space-22: 88px;
+      --section-y-desktop: 72px;
+      --section-y-tablet: 48px;
+      --section-y-phone: 32px;
+      --radius-xs: 2px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-pill: 9999px;
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-ring-accent: 0 0 0 1px var(--accent);
+      --elev-raised: 0 4px 24px rgba(0, 0, 0, 0.05);
+      --focus-ring: 0 0 0 2px var(--accent-active);
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+      --container-max: 1120px;
+      --container-gutter-desktop: 64px;
+      --container-gutter-tablet: 32px;
+      --container-gutter-phone: 16px;
+      --tag-bg-faint: #eef2f7;
+      --tag-bg-soft: #e4ecf5;
+      --tag-bg-base: #d6e1ee;
+      --tag-bg-strong: #d0dce9;
+    }
+
+    :root[lang="zh-CN"],
+    :root[lang="zh"] {
+      --font-display:
+        "TsangerJinKai02", "Source Han Serif SC", "Noto Serif CJK SC",
+        "Songti SC", "STSong", Georgia, serif;
+      --font-body:
+        "TsangerJinKai02", "Source Han Serif SC", "Noto Serif CJK SC",
+        "Songti SC", "STSong", Georgia, serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    body {
+      min-height: 100dvh;
+      margin: 0;
+      background: var(--bg);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: minmax(196px, 240px) minmax(0, 1fr);
+      gap: var(--space-6);
+      padding: 24px clamp(16px, 3.4vw, 40px);
+    }
+
+    .queue {
+      align-self: stretch;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: var(--space-6);
+      padding-top: var(--space-2);
+    }
+
+    .brand {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .brand-title {
+      margin: 0;
+      color: var(--fg);
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 500;
+      line-height: var(--leading-tight);
+      letter-spacing: 0;
+    }
+
+    .brand-sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      max-width: 20ch;
+    }
+
+    .review-meter {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background:
+        linear-gradient(180deg, rgba(250, 249, 245, 0.92), rgba(232, 230, 220, 0.34)),
+        var(--surface);
+      box-shadow: var(--elev-ring);
+    }
+
+    .review-meter::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .meter-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: var(--space-3);
+    }
+
+    .meter-kicker {
+      display: block;
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1;
+    }
+
+    .meter-number {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-top: 6px;
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .meter-number strong {
+      font-size: 42px;
+      font-weight: 500;
+      line-height: 0.9;
+    }
+
+    .meter-number span {
+      color: var(--muted);
+      font-size: var(--text-sm);
+      white-space: nowrap;
+    }
+
+    .meter-written {
+      display: grid;
+      justify-items: end;
+      gap: 4px;
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .meter-written strong {
+      color: var(--accent);
+      font-size: var(--text-lg);
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meter-rail {
+      height: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: var(--radius-pill);
+      background: var(--border-soft);
+    }
+
+    .meter-fill {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width var(--motion-base) var(--ease-standard);
+    }
+
+    .meter-chips {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .meter-chip {
+      min-width: 0;
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      padding: 6px 7px 7px;
+      background: rgba(250, 249, 245, 0.72);
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1.1;
+    }
+
+    .meter-chip strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--fg-2);
+      font-size: var(--text-md);
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .meter-chip.is-inbox strong {
+      color: var(--success);
+    }
+
+    .meter-chip.is-later strong {
+      color: var(--warn);
+    }
+
+    .meter-chip.is-skip strong {
+      color: var(--danger);
+    }
+
+    .filmstrip {
+      display: grid;
+      align-content: start;
+      gap: var(--space-2);
+    }
+
+    .film-item {
+      width: 100%;
+      min-height: 58px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 10px 11px;
+      background: transparent;
+      color: var(--fg-2);
+      text-align: left;
+      cursor: pointer;
+      transition:
+        background var(--motion-base) var(--ease-standard),
+        border-color var(--motion-base) var(--ease-standard),
+        box-shadow var(--motion-base) var(--ease-standard);
+    }
+
+    .film-item:hover {
+      background: var(--surface);
+      border-color: var(--border);
+    }
+
+    .film-item.active {
+      background: var(--surface);
+      border-color: var(--border);
+      box-shadow: var(--elev-ring);
+    }
+
+    .film-item:focus-visible,
+    .control:focus-visible,
+    .ghost:focus-visible,
+    .primary:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .film-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--meta);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .film-title {
+      display: block;
+      margin-top: var(--space-1);
+      font-size: var(--text-sm);
+      color: var(--fg-2);
+      line-height: 1.35;
+    }
+
+    .queue-foot {
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1.45;
+    }
+
+    .stage {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: var(--space-4);
+    }
+
+    .review-card {
+      height: calc(100dvh - 48px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--elev-raised);
+    }
+
+    .card-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-6);
+      padding: 18px 26px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .source-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+
+    .source-title {
+      color: var(--fg);
+      font-size: var(--text-md);
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border-radius: var(--radius-sm);
+      padding: 3px 8px;
+      background: var(--tag-bg-soft);
+      color: var(--accent);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: var(--tracking-label);
+      white-space: nowrap;
+    }
+
+    .meta-line {
+      margin-top: var(--space-2);
+      color: var(--meta);
+      font-size: var(--text-sm);
+      line-height: 1.45;
+    }
+
+    .atom-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .atom-chip {
+      min-height: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 4px 9px;
+      background: var(--bg);
+      color: var(--meta);
+      cursor: pointer;
+      font-size: var(--text-xs);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .atom-chip.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .atom-chip.done {
+      border-color: rgba(74, 107, 58, 0.38);
+      color: var(--success);
+    }
+
+    .progress {
+      display: grid;
+      justify-items: end;
+      align-content: start;
+      gap: var(--space-2);
+      color: var(--meta);
+      font-size: var(--text-sm);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .save-state {
+      color: var(--fg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      background: var(--bg);
+      font-size: var(--text-xs);
+      line-height: 1;
+    }
+
+    .save-state.saved {
+      color: var(--success);
+    }
+
+    .save-state.dirty {
+      color: var(--warn);
+    }
+
+    .paper-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-8);
+      padding: clamp(22px, 3vw, 40px) clamp(28px, 4.2vw, 64px) 24px;
+      min-height: 0;
+    }
+
+    .reading {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-content: stretch;
+      gap: 12px;
+      width: 100%;
+      max-width: none;
+      min-height: 0;
+      padding: 0;
+    }
+
+    .context-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      min-height: 30px;
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1.35;
+    }
+
+    .context-reset {
+      min-height: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 9px;
+      background: var(--bg);
+      color: var(--accent);
+      cursor: pointer;
+      font-size: var(--text-xs);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .context-scroll {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 10px 4px 28px 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .context-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .context-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .context-scroll::-webkit-scrollbar-thumb {
+      border-radius: var(--radius-pill);
+      background: var(--border);
+    }
+
+    .context-stack {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+      min-height: 100%;
+      padding: 220px 0 340px;
+    }
+
+    .context-block {
+      display: grid;
+      gap: 10px;
+    }
+
+    .context {
+      max-width: 96ch;
+      margin: 0;
+      color: #8a887f;
+      font-size: clamp(15px, 1.2vw, 17px);
+      line-height: 1.62;
+    }
+
+    .claim {
+      max-width: none;
+      margin: 0;
+      color: var(--fg);
+      font-family: var(--font-display);
+      font-size: clamp(34px, 4.25vw, 62px);
+      font-weight: 500;
+      line-height: 1.16;
+      letter-spacing: 0.2px;
+      text-wrap: pretty;
+    }
+
+    .focus-rule {
+      width: 88px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .highlight-note {
+      position: relative;
+      border-radius: 3px;
+      padding: 0 2px;
+      background: linear-gradient(180deg, rgba(255, 245, 112, 0.28), rgba(255, 226, 72, 0.7));
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      cursor: help;
+    }
+
+    .highlight-note.pending {
+      outline: 1px solid rgba(138, 107, 31, 0.52);
+      background: linear-gradient(180deg, rgba(255, 247, 142, 0.35), rgba(255, 229, 84, 0.88));
+    }
+
+    .highlight-note sup {
+      margin-left: 2px;
+      color: var(--accent);
+      font-family: var(--font-body);
+      font-size: 0.42em;
+      font-weight: 600;
+      line-height: 0;
+      vertical-align: super;
+      white-space: nowrap;
+    }
+
+    .selection-note-bar {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px 13px;
+      background:
+        linear-gradient(180deg, rgba(255, 245, 112, 0.12), rgba(250, 249, 245, 0.96)),
+        var(--surface);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 10px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .selection-note-bar[hidden] {
+      display: none;
+    }
+
+    .selection-preview {
+      display: none;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .selection-label {
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1;
+    }
+
+    .selection-text {
+      overflow: hidden;
+      color: var(--fg-2);
+      font-size: var(--text-sm);
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .selection-note-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      max-height: 88px;
+      resize: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      background: var(--bg);
+      color: var(--fg);
+      font: inherit;
+      font-size: var(--text-sm);
+      line-height: 1.45;
+    }
+
+    .selection-note-input:focus {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .selection-note-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-2);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .note-tooltip {
+      position: fixed;
+      z-index: 30;
+      max-width: min(360px, calc(100vw - 32px));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      background: var(--surface);
+      color: var(--fg-2);
+      box-shadow: var(--elev-raised);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      pointer-events: none;
+    }
+
+    .note-tooltip[hidden] {
+      display: none;
+    }
+
+    .note-panel {
+      position: fixed;
+      right: 28px;
+      top: 126px;
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100dvh - 156px);
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      background: var(--surface);
+      box-shadow: var(--elev-raised);
+      z-index: 20;
+    }
+
+    .note-panel[hidden] {
+      display: none;
+    }
+
+    .note-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: 12px;
+    }
+
+    .note-title {
+      margin: 0;
+      color: var(--fg);
+      font-size: var(--text-md);
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .note-sub {
+      margin: 4px 0 0;
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1.45;
+    }
+
+    .note-input {
+      width: 100%;
+      min-height: 128px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 11px;
+      background: var(--bg);
+      color: var(--fg);
+      font: inherit;
+      font-size: var(--text-sm);
+      line-height: 1.55;
+    }
+
+    .note-input:focus {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .note-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      margin-top: 10px;
+    }
+
+    .note-path {
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1.4;
+    }
+
+    .evidence {
+      align-self: center;
+      border-left: 1px solid var(--border);
+      padding-left: var(--space-7);
+      display: none;
+      gap: var(--space-6);
+    }
+
+    .evidence-group {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .group-label {
+      margin: 0;
+      color: var(--accent);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: var(--tracking-label);
+      text-transform: uppercase;
+    }
+
+    .group-body {
+      margin: 0;
+      color: var(--fg-2);
+      font-size: var(--text-base);
+      line-height: 1.6;
+      text-wrap: pretty;
+    }
+
+    .group-body.muted {
+      color: var(--muted);
+    }
+
+    .decision {
+      border-top: 1px solid var(--border);
+      padding: 14px 22px 15px;
+      display: grid;
+      grid-template-columns:
+        minmax(144px, 0.72fr)
+        minmax(188px, 0.9fr)
+        minmax(132px, 0.62fr)
+        minmax(124px, 0.58fr)
+        minmax(300px, 1.36fr);
+      align-items: start;
+      gap: 14px;
+      background: var(--surface);
+    }
+
+    .decision-left,
+    .decision-right {
+      display: contents;
+    }
+
+    .control-row {
+      display: grid;
+      align-content: start;
+      gap: 7px;
+    }
+
+    .control-label {
+      color: var(--meta);
+      font-size: var(--text-xs);
+      line-height: 1;
+      letter-spacing: var(--tracking-label);
+      text-transform: uppercase;
+    }
+
+    .segmented,
+    .pill-row,
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .control {
+      min-height: 32px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 11px;
+      background: var(--bg);
+      color: var(--fg-2);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1;
+      transition:
+        color var(--motion-fast) var(--ease-standard),
+        background var(--motion-fast) var(--ease-standard),
+        border-color var(--motion-fast) var(--ease-standard),
+        transform var(--motion-fast) var(--ease-standard);
+    }
+
+    .control:hover {
+      border-color: var(--accent);
+    }
+
+    .control:active,
+    .ghost:active,
+    .primary:active {
+      transform: translateY(1px);
+    }
+
+    .control.selected {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .control.saved-choice {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .control.later-choice {
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .control.skip-choice {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .control.saved-choice.selected,
+    .control.later-choice.selected,
+    .control.skip-choice.selected {
+      color: var(--accent-on);
+    }
+
+    .control.saved-choice.selected {
+      background: var(--success);
+    }
+
+    .control.later-choice.selected {
+      background: var(--warn);
+    }
+
+    .control.skip-choice.selected {
+      background: var(--danger);
+    }
+
+    .rating .control {
+      min-width: 34px;
+      padding-inline: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rating {
+      flex-wrap: nowrap;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: 9px 22px;
+      border-top: 1px solid var(--border-soft);
+      background: var(--bg);
+      color: var(--muted);
+      font-size: var(--text-sm);
+      line-height: 1.35;
+    }
+
+    .status-copy {
+      min-width: 0;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .ghost,
+    .primary {
+      min-height: 34px;
+      border: 0;
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1;
+      transition:
+        box-shadow var(--motion-fast) var(--ease-standard),
+        transform var(--motion-fast) var(--ease-standard);
+      white-space: nowrap;
+    }
+
+    .ghost {
+      background: transparent;
+      color: var(--accent);
+      box-shadow: var(--elev-ring-accent);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: var(--accent-on);
+      box-shadow: var(--elev-ring-accent);
+    }
+
+    .ghost:hover,
+    .primary:hover {
+      box-shadow: var(--elev-raised);
+    }
+
+    .ghost:disabled {
+      cursor: default;
+      color: var(--meta);
+      box-shadow: var(--elev-ring);
+      opacity: 0.7;
+    }
+
+    .toast {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      max-width: min(360px, calc(100vw - 32px));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      background: var(--surface);
+      color: var(--fg-2);
+      box-shadow: var(--elev-raised);
+      font-size: var(--text-sm);
+      line-height: 1.45;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition:
+        opacity var(--motion-base) var(--ease-standard),
+        transform var(--motion-base) var(--ease-standard);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        gap: var(--space-5);
+      }
+
+      .queue {
+        grid-template-rows: auto auto auto;
+      }
+
+      .brand-sub,
+      .queue-foot {
+        max-width: none;
+      }
+
+      .filmstrip {
+        grid-template-columns: repeat(5, minmax(132px, 1fr));
+        overflow-x: auto;
+        padding-bottom: var(--space-1);
+      }
+
+      .paper-body {
+        grid-template-columns: 1fr;
+      }
+
+      .evidence {
+        border-left: 0;
+        border-top: 1px solid var(--border);
+        padding-left: 0;
+        padding-top: var(--space-6);
+      }
+
+      .decision {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .selection-note-bar {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .selection-note-actions {
+        justify-content: flex-end;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .app {
+        padding: 16px;
+      }
+
+      .review-meter {
+        padding: 11px;
+      }
+
+      .meter-chips {
+        grid-template-columns: repeat(3, minmax(72px, 1fr));
+      }
+
+      .review-card {
+        min-height: auto;
+      }
+
+      .card-head {
+        grid-template-columns: 1fr;
+        padding: 18px 18px 16px;
+      }
+
+      .progress {
+        justify-items: start;
+      }
+
+      .paper-body {
+        padding: 28px 18px 24px;
+      }
+
+      .claim {
+        font-size: clamp(30px, 9.5vw, 42px);
+        max-width: 100%;
+      }
+
+      .decision,
+      .status-bar {
+        padding-inline: 18px;
+      }
+
+      .decision {
+        grid-template-columns: 1fr;
+      }
+
+      .status-bar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="候选观点审阅 Deck">
+    <aside class="queue" aria-label="审阅队列">
+      <div class="brand">
+        <h1 class="brand-title">候选观点审阅 Deck</h1>
+        <p class="brand-sub">把候选观点从表格行恢复成可深读、可决策的纸面片段。</p>
+      </div>
+
+      <div class="review-meter" aria-label="队列统计">
+        <div class="meter-top">
+          <div>
+            <span class="meter-kicker">今日审阅</span>
+            <span class="meter-number"><strong id="countPending">5</strong><span>待处理</span></span>
+          </div>
+          <div class="meter-written">
+            <strong id="countWritten">0 / 5</strong>
+            <span>已保存</span>
+          </div>
+        </div>
+        <div class="meter-rail" aria-hidden="true">
+          <span class="meter-fill" id="meterFill"></span>
+        </div>
+        <div class="meter-chips">
+          <span class="meter-chip is-inbox"><strong id="countSaved">5</strong>拟入库</span>
+          <span class="meter-chip is-later"><strong id="countLater">0</strong>稍后看</span>
+          <span class="meter-chip is-skip"><strong id="countSkipped">0</strong>跳过</span>
+        </div>
+      </div>
+
+      <nav class="filmstrip" id="filmstrip" aria-label="候选列表">
+        <button class="film-item active" type="button">
+          <span class="film-top"><span>01</span><span>入库</span></span>
+          <span class="film-title">内容资产工程</span>
+        </button>
+        <button class="film-item" type="button">
+          <span class="film-top"><span>02</span><span>入库</span></span>
+          <span class="film-title">Codex</span>
+        </button>
+        <button class="film-item" type="button">
+          <span class="film-top"><span>03</span><span>入库</span></span>
+          <span class="film-title">数据分析</span>
+        </button>
+        <button class="film-item" type="button">
+          <span class="film-top"><span>04</span><span>入库</span></span>
+          <span class="film-title">产品判断</span>
+        </button>
+        <button class="film-item" type="button">
+          <span class="film-top"><span>05</span><span>入库</span></span>
+          <span class="film-title">审阅体验</span>
+        </button>
+      </nav>
+
+      <p class="queue-foot">每日 20-50 条观点审阅，优先保护阅读节奏，再做结构化写入。</p>
+    </aside>
+
+    <section class="stage" aria-label="审阅工作区">
+      <article class="review-card" aria-live="polite">
+        <header class="card-head">
+          <div>
+            <div class="source-line">
+              <span class="source-title" id="sourceTitle">Tolaria 学习拆解：内容资产工程</span>
+              <span class="tag" id="atomType">判断</span>
+              <span class="tag" id="topicTag">内容资产工程</span>
+            </div>
+            <div class="meta-line" id="sourceMeta">原文 articles/content-asset-engineering.md · 拆解稿 digest/content-asset-engineering.md</div>
+            <div class="atom-strip" id="atomStrip" aria-label="当前文章候选观点"></div>
+          </div>
+          <div class="progress">
+            <span id="progressText">1 / 5</span>
+            <span class="save-state dirty" id="saveState">未保存</span>
+          </div>
+        </header>
+
+        <div class="paper-body">
+          <section class="reading" aria-label="候选观点正文">
+            <div class="context-toolbar">
+              <span>滚轮浏览完整上下文，核心观点会保持在当前 atom 附近</span>
+              <button class="context-reset" id="resetContextBtn" type="button">复位上下文</button>
+            </div>
+            <div class="context-scroll" id="contextScroll" tabindex="0">
+              <div class="context-stack">
+                <div class="context-block" id="prevContext"></div>
+                <div class="focus-rule" aria-hidden="true"></div>
+                <p class="claim" id="claimText" tabindex="-1">候选观点不应该只是摘录列表，而应该是从文章中提炼出的可复用判断单元：它需要保留语境、证据、冲突面和未来可投放位置。</p>
+                <div class="context-block" id="nextContext"></div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="evidence" aria-label="证据和关系">
+            <div class="evidence-group">
+              <p class="group-label">证据</p>
+              <p class="group-body" id="evidenceText">原文连续讨论了摘录、重写、证据回链和属性字段，明确把 atom 视为后续写作和产品决策的最小资产。</p>
+            </div>
+            <div class="evidence-group">
+              <p class="group-label">Soul 关联</p>
+              <p class="group-body muted" id="relationText">与 Soul.md 中的「好内容必须可迁移、可再判断」一致，可作为内容资产工程的核心规则候选。</p>
+            </div>
+            <div class="evidence-group">
+              <p class="group-label">冲突检查</p>
+              <p class="group-body muted" id="conflictText">与旧 atom「摘录优先」部分重叠，但本条更强调决策字段和复用位置，建议保留并合并旧条。</p>
+            </div>
+          </aside>
+        </div>
+
+        <section class="selection-note-bar" id="selectionNoteBar" aria-label="选中文本读书笔记" hidden>
+          <div class="selection-preview">
+            <span class="selection-label">已选原文</span>
+            <strong class="selection-text" id="selectedTextPreview"></strong>
+          </div>
+          <textarea class="selection-note-input" id="selectionNoteInput" placeholder="写下你的读书笔记：这个片段为什么重要、与你的想法如何连接、以后可如何复用..."></textarea>
+          <div class="selection-note-actions">
+            <button class="ghost" id="cancelSelectionNoteBtn" type="button">取消</button>
+            <button class="primary" id="saveSelectionNoteBtn" type="button">保存脚注</button>
+          </div>
+        </section>
+
+        <section class="decision" aria-label="决策区">
+          <div class="decision-left">
+            <div class="control-row">
+              <span class="control-label">处理</span>
+              <div class="segmented" id="actionControls">
+                <button class="control saved-choice selected" type="button">入库</button>
+                <button class="control later-choice" type="button">稍后</button>
+                <button class="control skip-choice" type="button">跳过</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <span class="control-label">评分</span>
+              <div class="pill-row rating" id="ratingControls">
+                <button class="control" type="button">1</button>
+                <button class="control" type="button">2</button>
+                <button class="control" type="button">3</button>
+                <button class="control selected" type="button">4</button>
+                <button class="control" type="button">5</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="decision-right">
+            <div class="control-row">
+              <span class="control-label">证据</span>
+              <div class="segmented" id="evidenceControls">
+                <button class="control selected" type="button">强</button>
+                <button class="control" type="button">弱</button>
+                <button class="control" type="button">缺失</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <span class="control-label">共鸣</span>
+              <div class="segmented" id="resonanceControls">
+                <button class="control selected" type="button">高</button>
+                <button class="control" type="button">中</button>
+                <button class="control" type="button">低</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <span class="control-label">复用</span>
+              <div class="chip-row" id="reuseControls">
+                <button class="control selected" type="button">文章</button>
+                <button class="control" type="button">PPT</button>
+                <button class="control" type="button">演讲</button>
+                <button class="control selected" type="button">研究</button>
+                <button class="control" type="button">项目</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="status-bar">
+          <span class="status-copy" id="statusCopy">未保存：当前选择会实时暂存，点击保存后写入拆解稿属性。</span>
+          <div class="actions" aria-label="审阅操作">
+            <button class="ghost" id="prevBtn" title="上一条，快捷键 J">上一条</button>
+            <button class="ghost" id="nextBtn" title="下一条，快捷键 K">下一条</button>
+            <button class="ghost" id="atomViewBtn" title="回到当前候选观点">Atom 视图</button>
+            <button class="ghost" id="openDigestBtn" title="在 Deck 内查看拆解稿">拆解稿视图</button>
+            <button class="primary" id="saveBtn" title="写回属性，快捷键 S">保存决策</button>
+          </div>
+        </footer>
+      </article>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="note-tooltip" id="noteTooltip" hidden></div>
+
+  <script>
+    const candidates = [
+      {
+        articleId: "content-asset-engineering",
+        articleTitle: "20260608 内容资产工程系统",
+        articleSummary: "收藏文章如何拆成观点、证据、脚注和可复用判断。",
+        source: "Tolaria 学习拆解：内容资产工程",
+        type: "判断",
+        topic: "内容资产工程",
+        digest: "digest/content-asset-engineering.md",
+        original: "articles/content-asset-engineering.md",
+        prev: "过去的学习笔记像一堆未经压缩的原材料，能证明自己读过，却很难在下一次产品判断中被直接调用。真正的问题不是资料太少，而是读完之后没有被压成可复用的判断。",
+        prevMore: [
+          "如果只是把文章收藏下来，下一次写 PPT、做方案或判断产品方向时，系统仍然不知道哪些句子代表你的判断，哪些只是作者的表达。",
+          "所以候选观点需要从原文中被提炼出来，但不能脱离原文。脱离原文会变成口号，只保留原文又会变成资料堆。",
+          "一个好的审阅界面应该允许用户先回到原文气氛里，看到前因后果，然后再决定这句话是否值得进入长期知识库。",
+          "这也是为什么卡片不能只显示一句高亮句。用户需要知道它之前在回应什么问题，它之后会导向什么行动。"
+        ],
+        claim: "候选观点不应该只是摘录列表，而应该是从文章中提炼出的可复用判断单元：它需要保留语境、证据、冲突面和未来可投放位置。",
+        next: "只有当候选观点带着来源、证据和复用方向进入审阅流程，知识库才会从收藏夹变成可以持续装配的内容资产系统。审阅动作本身就是把阅读变成资产的最后一关。",
+        nextMore: [
+          "这个过程不需要每条都精修，但需要保留人的最后选择：是否入库、是否共鸣、能否复用、证据是否足够强。",
+          "review_notes 则记录读者自己的即时判断，它不是原文摘要，而是 mysoul 层的一类读书笔记。",
+          "如果这条观点以后被用于文章、演讲或项目判断，真正可追溯的不只是原文出处，还包括当时为什么打动了我。",
+          "因此上下文滚动和备注记录是同一个动作的两面：前者帮助恢复语境，后者帮助保存我的判断。"
+        ],
+        evidence: "原文连续讨论了摘录、重写、证据回链和属性字段，明确把 atom 视为后续写作和产品决策的最小资产。",
+        relation: "与 Soul.md 中的「好内容必须可迁移、可再判断」一致，可作为内容资产工程的核心规则候选。",
+        conflict: "与旧 atom「摘录优先」部分重叠，但本条更强调决策字段和复用位置，建议保留并合并旧条。"
+      },
+      {
+        articleId: "codex-entrypoints",
+        articleTitle: "Codex 工作入口复盘",
+        articleSummary: "把不同 agent 任务拆成稳定工作面，而不是依赖一个通用聊天入口。",
+        source: "Codex 工作入口复盘",
+        type: "原则",
+        topic: "Codex",
+        digest: "digest/codex-entrypoints.md",
+        original: "articles/codex-entrypoints.md",
+        prev: "把所有工作都交给一个通用对话入口，看起来省事，实际上会让上下文、权限和交付格式不断漂移。用户最后不是在做事，而是在反复解释自己到底要哪一种交付。",
+        prevMore: [
+          "同一个 agent 既要查资料，又要改代码，还要做设计评审时，失败往往不是模型不聪明，而是入口没有限定任务形态。",
+          "入口如果不分流，后续的工具权限、记忆读取和验收标准都会混在一起。"
+        ],
+        claim: "Codex 的有效入口不是一个更长的提示词，而是一组按意图分流的工作面：读代码、改代码、生成设计、写文档和交接记忆应该进入不同的流程。",
+        next: "入口分流之后，用户不需要记住流程细节，只需要表达目的，系统再把工具、记忆和验证路径绑定上去。这样 agent 才能从聊天助手变成工作面的一部分。",
+        nextMore: [
+          "这种分流也让回放和复盘变得稳定：每类入口都能留下对应的产物、命令和验收记录。",
+          "对 Knowledge App 来说，这意味着 review deck、标准化入库、项目档案生成器都应该是不同工作面。"
+        ],
+        evidence: "文章对比了三次失败任务，失败点都不是模型能力，而是入口没有区分读取、编辑、验证和交付。",
+        relation: "呼应 Soul.md 里「工具要替人收束流程，而不是把流程暴露给人」的产品判断。",
+        conflict: "与旧 atom「提示词即工作流」存在冲突，建议保留本条，并把旧条降级为历史观察。"
+      },
+      {
+        articleId: "data-analysis-chain",
+        articleTitle: "数据分析链路笔记",
+        articleSummary: "从业务问题到字段假设、可复查计算和叙事输出的分析链路。",
+        source: "数据分析链路笔记",
+        type: "流程",
+        topic: "数据分析",
+        digest: "digest/data-analysis-chain.md",
+        original: "articles/data-analysis-chain.md",
+        prev: "很多分析失败不是因为图表不够好，而是问题、字段和校验关系没有被提前固定。只要这三者没有被锁住，后面的图表越漂亮，越容易掩盖错误。",
+        prevMore: [
+          "业务方提出的问题通常不是可以直接计算的问题，它需要先被翻译成字段假设和可验证口径。",
+          "如果这一步跳过，后续代码即使能跑，也只是把模糊问题快速固化成错误结果。"
+        ],
+        claim: "一条可信的数据分析链路，应该先把业务问题翻译成字段假设，再把字段假设翻译成可复查的计算步骤，最后才讨论图表和叙事。",
+        next: "当链路可复查，分析结果就不再依赖某一次对话的口才，而可以被下一次项目继续使用。报告、代码和结论也能回到同一套审计路径里。",
+        nextMore: [
+          "这也是为什么分析结论要保留计算步骤、字段来源和异常处理，而不只是保留最终图表。",
+          "进入 atom 库时，它更适合作为 workflow 类型，而不是一句孤立观点。"
+        ],
+        evidence: "原文列出了三段链路：问题定义、字段映射、结果校验，并记录了每段常见错误。",
+        relation: "适合进入 Knowledge App 的「分析工作流」分类，也可反哺数据分析 skill 的检查清单。",
+        conflict: "无明显重复。与旧 atom「先画图再解释」方向相反，需要标记为纠偏条。"
+      },
+      {
+        articleId: "soul-product-beliefs",
+        articleTitle: "Soul.md 产品判断摘记",
+        articleSummary: "知识系统如何维持个人长期判断，而不是只存更多内容。",
+        source: "Soul.md 产品判断摘记",
+        type: "信念",
+        topic: "产品判断",
+        digest: "digest/soul-product-beliefs.md",
+        original: "articles/soul-product-beliefs.md",
+        prev: "用户不是缺更多功能，而是缺一个能帮他保持判断连续性的环境。新的收藏、聊天记录、项目产物如果不能回到同一套长期判断里，就只是更多噪音。",
+        prevMore: [
+          "知识系统最容易变成仓库，什么都能放进去，但很少帮人做选择。",
+          "真正有价值的是它能不断把新材料拉回长期问题：我到底相信什么、反对什么、下一次会如何复用。"
+        ],
+        claim: "Knowledge App 的价值不在于存下更多内容，而在于让每一次阅读后的判断都能回到同一个人格和同一套取舍里。",
+        next: "这意味着审阅界面要帮助用户做选择，而不是把每个字段都变成输入框。真正重要的是让用户快速判断：这个观点是否代表我、能否复用、是否值得进入长期记忆。",
+        nextMore: [
+          "review_notes 应该是这条链路的一部分。它记录的不是文章说了什么，而是我读完之后产生了什么判断。",
+          "因此它应该归到 mysoul 层，而不是作为普通文章摘要处理。"
+        ],
+        evidence: "原文把人格、取舍、历史判断和工具入口连成一条产品线索，强调连续性高于覆盖率。",
+        relation: "与 Soul.md 主轴高度一致，可作为 Review Deck 的产品北极星。",
+        conflict: "与旧 atom「知识库越全越好」存在方向冲突，建议保留本条并标记旧条为反例。"
+      },
+      {
+        articleId: "content-asset-engineering",
+        articleTitle: "20260608 内容资产工程系统",
+        articleSummary: "收藏文章如何拆成观点、证据、脚注和可复用判断。",
+        source: "本地 Knowledge App 架构草稿",
+        type: "界面",
+        topic: "审阅体验",
+        digest: "digest/content-asset-engineering.md",
+        original: "articles/content-asset-engineering.md",
+        prev: "Spreadsheet 能收纳字段，却会把观点压扁成行列，用户很难在表格里重新进入原文气氛。观点审阅不是录入数据，而是在原文语境里重新做一次判断。",
+        prevMore: [
+          "表格适合批量检查状态，却不适合承载读书时的注意力。观点需要和前后文一起出现，用户才知道它为什么重要。",
+          "如果审阅体验太像填表，最后用户会只处理字段，而不是重新判断观点。"
+        ],
+        claim: "候选观点审阅 Deck 应该把候选观点设计成可翻阅的纸面卡片：中心服务深读，边缘服务证据，底部服务决策。",
+        next: "这种结构把审阅从数据录入还原成判断动作，既有阅读沉浸感，也能稳定写回属性。卡片承担阅读，底部控件承担决策，二者不应该互相抢注意力。",
+        nextMore: [
+          "上下文可以滚动，但决策控件应该固定在可见区域。这样用户既能继续读原文，也能随时完成入库判断。",
+          "备注功能只需要轻量，不需要变成聊天。它的目标是把读者自己的思考写回 review_notes。"
+        ],
+        evidence: "原文明确提出卡片、上下文淡化、底部点选和状态回写四个界面约束。",
+        relation: "直接对应本 MVP 的交互模型，可作为界面设计说明的核心 atom。",
+        conflict: "无冲突。与当前原型完全同向，建议入库并作为后续设计依据。"
+      }
+    ];
+
+    const optionSets = {
+      action: [
+        { value: "inbox", label: "入库", className: "saved-choice" },
+        { value: "later", label: "稍后", className: "later-choice" },
+        { value: "skip", label: "跳过", className: "skip-choice" }
+      ],
+      rating: ["1", "2", "3", "4", "5"],
+      evidence: [
+        { value: "strong", label: "强" },
+        { value: "weak", label: "弱" },
+        { value: "missing", label: "缺失" }
+      ],
+      resonance: [
+        { value: "high", label: "高" },
+        { value: "medium", label: "中" },
+        { value: "low", label: "低" }
+      ],
+      reuse: ["文章", "PPT", "演讲", "研究", "项目"]
+    };
+
+    const reuseLabels = {
+      article: "文章",
+      ppt: "PPT",
+      speech: "演讲",
+      research: "研究",
+      project: "项目"
+    };
+
+    const defaultReview = (item = {}) => ({
+      action: item.action || "inbox",
+      rating: String(item.rating ?? "0"),
+      evidence: item.evidenceStatus || "unreviewed",
+      resonance: item.resonance || "unrated",
+      reuse: Array.isArray(item.reuse) ? item.reuse.map((value) => reuseLabels[value] || value) : [],
+      favorite: Boolean(item.favorite),
+      reviewNotes: Array.isArray(item.reviewNotes) ? item.reviewNotes : [],
+      noteType: "mysoul/reading-note",
+      saved: Boolean(item.reviewedAt),
+      dirty: false,
+      savedAt: item.reviewedAt || ""
+    });
+
+    const saved = JSON.parse(localStorage.getItem("atom-review-deck-state") || "null");
+    let state = saved && Array.isArray(saved.reviews) && saved.reviews.length === candidates.length ? saved : {
+      index: 0,
+      viewMode: "atom",
+      reviews: candidates.map((item) => defaultReview(item))
+    };
+    state.index = Math.max(0, Math.min(candidates.length - 1, state.index || 0));
+    state.viewMode = state.viewMode || "atom";
+    if (state.viewMode === "source") state.viewMode = "atom";
+
+    const els = {
+      filmstrip: document.getElementById("filmstrip"),
+      atomStrip: document.getElementById("atomStrip"),
+      sourceTitle: document.getElementById("sourceTitle"),
+      atomType: document.getElementById("atomType"),
+      topicTag: document.getElementById("topicTag"),
+      sourceMeta: document.getElementById("sourceMeta"),
+      progressText: document.getElementById("progressText"),
+      saveState: document.getElementById("saveState"),
+      prevContext: document.getElementById("prevContext"),
+      contextScroll: document.getElementById("contextScroll"),
+      resetContextBtn: document.getElementById("resetContextBtn"),
+      claimText: document.getElementById("claimText"),
+      nextContext: document.getElementById("nextContext"),
+      evidenceText: document.getElementById("evidenceText"),
+      relationText: document.getElementById("relationText"),
+      conflictText: document.getElementById("conflictText"),
+      actionControls: document.getElementById("actionControls"),
+      ratingControls: document.getElementById("ratingControls"),
+      evidenceControls: document.getElementById("evidenceControls"),
+      resonanceControls: document.getElementById("resonanceControls"),
+      reuseControls: document.getElementById("reuseControls"),
+      selectionNoteBar: document.getElementById("selectionNoteBar"),
+      selectedTextPreview: document.getElementById("selectedTextPreview"),
+      selectionNoteInput: document.getElementById("selectionNoteInput"),
+      cancelSelectionNoteBtn: document.getElementById("cancelSelectionNoteBtn"),
+      saveSelectionNoteBtn: document.getElementById("saveSelectionNoteBtn"),
+      statusCopy: document.getElementById("statusCopy"),
+      countPending: document.getElementById("countPending"),
+      countWritten: document.getElementById("countWritten"),
+      countSaved: document.getElementById("countSaved"),
+      countLater: document.getElementById("countLater"),
+      countSkipped: document.getElementById("countSkipped"),
+      meterFill: document.getElementById("meterFill"),
+      prevBtn: document.getElementById("prevBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      atomViewBtn: document.getElementById("atomViewBtn"),
+      openDigestBtn: document.getElementById("openDigestBtn"),
+      saveBtn: document.getElementById("saveBtn"),
+      toast: document.getElementById("toast"),
+      noteTooltip: document.getElementById("noteTooltip")
+    };
+
+    let pendingSelection = null;
+
+    function persist() {
+      localStorage.setItem("atom-review-deck-state", JSON.stringify(state));
+    }
+
+    function currentReview() {
+      return state.reviews[state.index];
+    }
+
+    function articleGroups() {
+      const groups = [];
+      const byId = new Map();
+      candidates.forEach((item, index) => {
+        const id = item.articleId || item.original || item.source;
+        if (!byId.has(id)) {
+          const group = {
+            id,
+            title: item.articleTitle || item.source,
+            summary: item.articleSummary || "",
+            original: item.original,
+            digest: item.digest,
+            indices: []
+          };
+          byId.set(id, group);
+          groups.push(group);
+        }
+        byId.get(id).indices.push(index);
+      });
+      return groups;
+    }
+
+    function currentArticleGroup() {
+      return articleGroups().find((group) => group.indices.includes(state.index)) || articleGroups()[0];
+    }
+
+    function currentArticlePosition() {
+      const groups = articleGroups();
+      const group = currentArticleGroup();
+      const articleIndex = groups.findIndex((item) => item.id === group.id);
+      const atomIndex = group.indices.indexOf(state.index);
+      return { groups, group, articleIndex, atomIndex };
+    }
+
+    function setViewMode(mode) {
+      state.viewMode = mode;
+      persist();
+      render(true);
+    }
+
+    function neighborIndex(delta) {
+      const { groups, group, articleIndex, atomIndex } = currentArticlePosition();
+      if (delta > 0) {
+        if (atomIndex < group.indices.length - 1) return group.indices[atomIndex + 1];
+        return groups[articleIndex + 1]?.indices[0] ?? null;
+      }
+      if (atomIndex > 0) return group.indices[atomIndex - 1];
+      const prevGroup = groups[articleIndex - 1];
+      return prevGroup ? prevGroup.indices[prevGroup.indices.length - 1] : null;
+    }
+
+    function markDirty() {
+      const review = currentReview();
+      review.dirty = true;
+      review.saved = false;
+      review.savedAt = "";
+      persist();
+      render();
+    }
+
+    function setSingle(field, value) {
+      currentReview()[field] = value;
+      markDirty();
+    }
+
+    function toggleReuse(value) {
+      const review = currentReview();
+      if (review.reuse.includes(value)) {
+        review.reuse = review.reuse.filter((item) => item !== value);
+      } else {
+        review.reuse = [...review.reuse, value];
+      }
+      markDirty();
+    }
+
+    function contextNode(text) {
+      const el = document.createElement("p");
+      el.className = "context";
+      el.textContent = text;
+      return el;
+    }
+
+    function renderContextBlock(target, primary, more) {
+      const paragraphs = [primary, ...(more || [])].filter(Boolean);
+      target.replaceChildren(...paragraphs.map(contextNode));
+    }
+
+    function resetContext(behavior = "smooth") {
+      requestAnimationFrame(() => {
+        const containerRect = els.contextScroll.getBoundingClientRect();
+        const claimRect = els.claimText.getBoundingClientRect();
+        const currentTop = els.contextScroll.scrollTop;
+        const targetTop = currentTop
+          + (claimRect.top + claimRect.height / 2)
+          - (containerRect.top + containerRect.height / 2);
+        const maxTop = els.contextScroll.scrollHeight - els.contextScroll.clientHeight;
+        els.contextScroll.scrollTo({
+          top: Math.max(0, Math.min(maxTop, targetTop)),
+          behavior
+        });
+      });
+    }
+
+    function normalizeNotes(review) {
+      if (Array.isArray(review.reviewNotes)) return review.reviewNotes;
+      if (typeof review.reviewNotes === "string" && review.reviewNotes.trim()) {
+        return [{
+          id: `legacy-${Date.now()}`,
+          sourceText: "",
+          note: review.reviewNotes.trim(),
+          type: "mysoul/reading-note",
+          source: candidates[state.index].original,
+          topic: candidates[state.index].topic,
+          footnote: 1,
+          createdAt: new Date().toISOString()
+        }];
+      }
+      return [];
+    }
+
+    function unwrapPendingSelection() {
+      if (!pendingSelection?.mark?.isConnected) return;
+      const textNode = document.createTextNode(pendingSelection.text);
+      pendingSelection.mark.replaceWith(textNode);
+      pendingSelection = null;
+    }
+
+    function clearSelectionNote() {
+      unwrapPendingSelection();
+      els.selectionNoteBar.hidden = true;
+      els.selectionNoteInput.value = "";
+      els.selectedTextPreview.textContent = "";
+      window.getSelection()?.removeAllRanges();
+    }
+
+    function markTitle(note) {
+      return `${note.footnote}. ${note.note}`;
+    }
+
+    function decorateMark(mark, note) {
+      mark.classList.remove("pending");
+      mark.dataset.noteId = note.id;
+      mark.dataset.note = note.note;
+      mark.title = markTitle(note);
+      mark.appendChild(document.createTextNode("\u2060"));
+      const sup = document.createElement("sup");
+      sup.textContent = note.footnote;
+      mark.appendChild(sup);
+    }
+
+    function highlightRange(range, text) {
+      const mark = document.createElement("mark");
+      mark.className = "highlight-note pending";
+      mark.textContent = text;
+      range.deleteContents();
+      range.insertNode(mark);
+      return mark;
+    }
+
+    function handleTextSelection() {
+      if (state.viewMode !== "atom") {
+        window.getSelection()?.removeAllRanges();
+        showToast("请回到 Atom 视图后再做读书笔记标注");
+        return;
+      }
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      const text = selection?.toString().replace(/\s+/g, " ").trim();
+      if (!text || text.length < 2) return;
+
+      const range = selection.getRangeAt(0);
+      const startElement = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentElement
+        : range.startContainer;
+      const endElement = range.endContainer.nodeType === Node.TEXT_NODE
+        ? range.endContainer.parentElement
+        : range.endContainer;
+      const startBlock = startElement?.closest?.(".context, .claim");
+      const endBlock = endElement?.closest?.(".context, .claim");
+
+      if (
+        !startBlock ||
+        !endBlock ||
+        startBlock !== endBlock ||
+        startElement?.closest?.(".highlight-note") ||
+        endElement?.closest?.(".highlight-note")
+      ) {
+        showToast("请在同一段文字内选择要标注的原文片段");
+        selection.removeAllRanges();
+        return;
+      }
+
+      unwrapPendingSelection();
+      const mark = highlightRange(range, text);
+      pendingSelection = { mark, text };
+      els.selectedTextPreview.textContent = text;
+      els.selectionNoteInput.value = "";
+      els.selectionNoteBar.hidden = false;
+      selection.removeAllRanges();
+      requestAnimationFrame(() => els.selectionNoteInput.focus());
+    }
+
+    function saveSelectionNote() {
+      if (!pendingSelection?.mark?.isConnected) {
+        showToast("请先选择一段原文");
+        return;
+      }
+
+      const noteText = els.selectionNoteInput.value.trim();
+      if (!noteText) {
+        showToast("先写一句读书笔记再保存");
+        els.selectionNoteInput.focus();
+        return;
+      }
+
+      const review = currentReview();
+      const notes = normalizeNotes(review);
+      const item = candidates[state.index];
+      const note = {
+        id: `note-${Date.now()}-${notes.length + 1}`,
+        type: "mysoul/reading-note",
+        sourceText: pendingSelection.text,
+        note: noteText,
+        source: item.original,
+        digest: item.digest,
+        topic: item.topic,
+        footnote: notes.length + 1,
+        createdAt: new Date().toISOString()
+      };
+
+      notes.push(note);
+      review.reviewNotes = notes;
+      review.noteType = "mysoul/reading-note";
+      review.dirty = true;
+      review.saved = false;
+      decorateMark(pendingSelection.mark, note);
+      pendingSelection = null;
+      els.selectionNoteBar.hidden = true;
+      els.selectionNoteInput.value = "";
+      persist();
+      renderStatus();
+      window.parent.postMessage({
+        type: "review-deck:save-note",
+        candidate: {
+          id: item.id,
+          ref: item.ref,
+          digest: item.digest
+        },
+        note
+      }, window.location.origin);
+      showToast(`已保存脚注 ${note.footnote}：原文片段与读书笔记已配对归档`);
+    }
+
+    function applySavedHighlights() {
+      const review = currentReview();
+      const notes = normalizeNotes(review).filter((note) => note.sourceText);
+      for (const note of notes) {
+        const walker = document.createTreeWalker(
+          els.contextScroll,
+          NodeFilter.SHOW_TEXT,
+          {
+            acceptNode(node) {
+              if (node.parentElement?.closest(".highlight-note")) return NodeFilter.FILTER_REJECT;
+              return node.nodeValue.includes(note.sourceText)
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_SKIP;
+            }
+          }
+        );
+        const node = walker.nextNode();
+        if (!node) continue;
+        const index = node.nodeValue.indexOf(note.sourceText);
+        const before = document.createTextNode(node.nodeValue.slice(0, index));
+        const mark = document.createElement("mark");
+        mark.className = "highlight-note";
+        mark.textContent = note.sourceText;
+        decorateMark(mark, note);
+        const after = document.createTextNode(node.nodeValue.slice(index + note.sourceText.length));
+        node.replaceWith(before, mark, after);
+      }
+    }
+
+    function renderAtomStrip() {
+      const { group } = currentArticlePosition();
+      els.atomStrip.replaceChildren(
+        ...group.indices.map((flatIndex, index) => {
+          const item = candidates[flatIndex];
+          const review = state.reviews[flatIndex];
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = `atom-chip ${flatIndex === state.index && state.viewMode === "atom" ? "active" : ""} ${review.saved ? "done" : ""}`;
+          chip.textContent = `${index + 1}. ${item.type}`;
+          chip.title = item.claim;
+          chip.addEventListener("click", () => {
+            state.index = flatIndex;
+            state.viewMode = "atom";
+            persist();
+            render(true);
+          });
+          return chip;
+        })
+      );
+    }
+
+    function renderAtomView(item) {
+      renderContextBlock(els.prevContext, item.prev, item.prevMore);
+      els.claimText.textContent = item.claim;
+      renderContextBlock(els.nextContext, item.next, item.nextMore);
+      applySavedHighlights();
+    }
+
+    function renderDigestView(item, group) {
+      const articleItems = group.indices.map((index) => candidates[index]);
+      renderContextBlock(
+        els.prevContext,
+        `${group.title} · 拆解稿视图`,
+        [
+          `拆解稿：${group.digest}`,
+          "拆解稿作为 Deck 的数据源直接渲染。你无需再回 Tolaria 查看 md 文件。"
+        ]
+      );
+      els.claimText.textContent = "这篇文章的候选 atom、审阅字段、脚注和 review_notes 都在当前 Deck 里完成。";
+      renderContextBlock(
+        els.nextContext,
+        "候选 atom 列表：",
+        articleItems.flatMap((atom, index) => {
+          const review = state.reviews[group.indices[index]];
+          const notes = normalizeNotes(review);
+          return [
+            `${index + 1}. ${atom.type}｜${atom.topic}`,
+            atom.claim,
+            `审阅：${actionLabel(review.action)} · 评分 ${review.rating} · 证据 ${optionLabel(optionSets.evidence, review.evidence)} · 共鸣 ${optionLabel(optionSets.resonance, review.resonance)} · 脚注 ${notes.length} 条`
+          ];
+        })
+      );
+    }
+
+    function button(label, selected, onClick, extraClass, title) {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = `control ${extraClass || ""} ${selected ? "selected" : ""}`.trim();
+      el.textContent = label;
+      el.setAttribute("aria-pressed", String(selected));
+      if (title) el.title = title;
+      el.addEventListener("click", onClick);
+      return el;
+    }
+
+    function renderControls() {
+      const review = currentReview();
+      els.actionControls.replaceChildren(
+        ...optionSets.action.map((option) =>
+          button(
+            option.label,
+            review.action === option.value,
+            () => setSingle("action", option.value),
+            option.className,
+            `处理为${option.label}`
+          )
+        )
+      );
+
+      els.ratingControls.replaceChildren(
+        ...optionSets.rating.map((value) =>
+          button(value, review.rating === value, () => setSingle("rating", value), "", `评分 ${value}`)
+        )
+      );
+
+      els.evidenceControls.replaceChildren(
+        ...optionSets.evidence.map((option) =>
+          button(
+            option.label,
+            review.evidence === option.value,
+            () => setSingle("evidence", option.value),
+            "",
+            `证据 ${option.label}`
+          )
+        )
+      );
+
+      els.resonanceControls.replaceChildren(
+        ...optionSets.resonance.map((option) =>
+          button(
+            option.label,
+            review.resonance === option.value,
+            () => setSingle("resonance", option.value),
+            "",
+            `共鸣 ${option.label}`
+          )
+        )
+      );
+
+      els.reuseControls.replaceChildren(
+        ...optionSets.reuse.map((value) =>
+          button(value, review.reuse.includes(value), () => toggleReuse(value), "", `切换复用场景 ${value}`)
+        )
+      );
+    }
+
+    function actionLabel(value) {
+      const match = optionSets.action.find((item) => item.value === value);
+      return match ? match.label : "待审";
+    }
+
+    function optionLabel(options, value) {
+      const match = options.find((item) => item.value === value);
+      return match ? match.label : value;
+    }
+
+    function renderFilmstrip() {
+      els.filmstrip.replaceChildren(
+        ...articleGroups().map((group, index) => {
+          const currentGroup = currentArticleGroup();
+          const reviews = group.indices.map((flatIndex) => state.reviews[flatIndex]);
+          const savedCount = reviews.filter((review) => review.saved).length;
+          const inboxCount = reviews.filter((review) => review.action === "inbox").length;
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className = `film-item ${group.id === currentGroup.id ? "active" : ""}`;
+          el.innerHTML = `
+            <span class="film-top">
+              <span>${String(index + 1).padStart(2, "0")}</span>
+              <span>${savedCount}/${group.indices.length} 已存</span>
+            </span>
+            <span class="film-title">${group.title}</span>
+          `;
+          el.title = `${group.summary || group.title} · ${group.indices.length} 个 atom · ${inboxCount} 个拟入库`;
+          el.addEventListener("click", () => {
+            state.index = group.indices[0];
+            state.viewMode = "atom";
+            persist();
+            render(true);
+          });
+          return el;
+        })
+      );
+    }
+
+    function renderCounts() {
+      const totals = state.reviews.reduce(
+        (acc, review) => {
+          if (!review.saved) acc.pending += 1;
+          if (review.saved) acc.written += 1;
+          if (review.action === "inbox") acc.inbox += 1;
+          if (review.action === "later") acc.later += 1;
+          if (review.action === "skip") acc.skip += 1;
+          return acc;
+        },
+        { pending: 0, written: 0, inbox: 0, later: 0, skip: 0 }
+      );
+      els.countPending.textContent = totals.pending;
+      els.countWritten.textContent = `${totals.written} / ${state.reviews.length}`;
+      els.countSaved.textContent = totals.inbox;
+      els.countLater.textContent = totals.later;
+      els.countSkipped.textContent = totals.skip;
+      els.meterFill.style.width = `${Math.round((totals.written / state.reviews.length) * 100)}%`;
+    }
+
+    function renderStatus() {
+      const review = currentReview();
+      const notes = normalizeNotes(review);
+      els.saveState.classList.toggle("saved", review.saved);
+      els.saveState.classList.toggle("dirty", review.dirty);
+      els.saveState.textContent = review.saved
+        ? "已写入属性"
+        : "未保存";
+      els.statusCopy.textContent = review.saved
+        ? `已保存：处理 ${actionLabel(review.action)}，评分 ${review.rating}，脚注 ${notes.length} 条，复用 ${review.reuse.join("、") || "未选"}。`
+        : `未保存：当前选择会实时暂存，脚注 ${notes.length} 条，点击保存后写入 ${candidates[state.index].digest} 的属性。`;
+    }
+
+    function render(resetView = false) {
+      const item = candidates[state.index];
+      const { groups, group, articleIndex, atomIndex } = currentArticlePosition();
+      pendingSelection = null;
+      els.selectionNoteBar.hidden = true;
+      els.selectionNoteInput.value = "";
+      els.selectedTextPreview.textContent = "";
+      els.sourceTitle.textContent = group.title;
+      els.atomType.textContent = item.type;
+      els.topicTag.textContent = item.topic;
+      els.sourceMeta.textContent = `文章 ${articleIndex + 1}/${groups.length} · Atom ${atomIndex + 1}/${group.indices.length} · 原文 ${group.original} · 拆解稿 ${group.digest}`;
+      els.progressText.textContent = `A${articleIndex + 1} · ${atomIndex + 1}/${group.indices.length}`;
+      if (state.viewMode === "digest") {
+        renderDigestView(item, group);
+      } else {
+        renderAtomView(item);
+      }
+      els.evidenceText.textContent = item.evidence;
+      els.relationText.textContent = item.relation;
+      els.conflictText.textContent = item.conflict;
+      renderControls();
+      renderAtomStrip();
+      renderFilmstrip();
+      renderCounts();
+      renderStatus();
+      els.prevBtn.disabled = neighborIndex(-1) === null;
+      els.nextBtn.disabled = neighborIndex(1) === null;
+      els.atomViewBtn.classList.toggle("primary", state.viewMode === "atom");
+      els.atomViewBtn.classList.toggle("ghost", state.viewMode !== "atom");
+      els.openDigestBtn.classList.toggle("primary", state.viewMode === "digest");
+      els.openDigestBtn.classList.toggle("ghost", state.viewMode !== "digest");
+      if (resetView) {
+        resetContext("auto");
+      }
+    }
+
+    function move(delta) {
+      const next = neighborIndex(delta);
+      if (next !== null && next !== state.index) {
+        state.index = next;
+        state.viewMode = "atom";
+        persist();
+        render(true);
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2400);
+    }
+
+    function showNoteTooltip(mark, event) {
+      els.noteTooltip.textContent = mark.title;
+      els.noteTooltip.hidden = false;
+      moveNoteTooltip(event);
+    }
+
+    function moveNoteTooltip(event) {
+      if (els.noteTooltip.hidden) return;
+      const margin = 14;
+      const rect = els.noteTooltip.getBoundingClientRect();
+      const x = Math.min(window.innerWidth - rect.width - margin, event.clientX + margin);
+      const y = Math.min(window.innerHeight - rect.height - margin, event.clientY + margin);
+      els.noteTooltip.style.left = `${Math.max(margin, x)}px`;
+      els.noteTooltip.style.top = `${Math.max(margin, y)}px`;
+    }
+
+    function hideNoteTooltip() {
+      els.noteTooltip.hidden = true;
+    }
+
+    function saveDecision() {
+      const review = currentReview();
+      const item = candidates[state.index];
+      const now = new Date();
+      review.saved = true;
+      review.dirty = false;
+      review.savedAt = now.toISOString();
+      persist();
+      render();
+      window.parent.postMessage({
+        type: "review-deck:save-decision",
+        candidate: {
+          id: item.id,
+          ref: item.ref,
+          digest: item.digest
+        },
+        review
+      }, window.location.origin);
+      const noteCount = normalizeNotes(review).length;
+      showToast(`已写入属性：${candidates[state.index].topic}，${actionLabel(review.action)}，评分 ${review.rating}${noteCount ? `，脚注 ${noteCount} 条` : ""}`);
+    }
+
+    function loadHostCandidates(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        showToast("当前视图没有可审阅的 digest atom");
+        return;
+      }
+      candidates.splice(0, candidates.length, ...items);
+      state = {
+        index: 0,
+        viewMode: "atom",
+        reviews: candidates.map((item) => defaultReview(item))
+      };
+      persist();
+      render(true);
+    }
+
+    els.prevBtn.addEventListener("click", () => move(-1));
+    els.nextBtn.addEventListener("click", () => move(1));
+    els.saveBtn.addEventListener("click", saveDecision);
+    els.resetContextBtn.addEventListener("click", () => resetContext("smooth"));
+    els.atomViewBtn.addEventListener("click", () => setViewMode("atom"));
+    els.openDigestBtn.addEventListener("click", () => setViewMode("digest"));
+    els.contextScroll.addEventListener("mouseup", () => setTimeout(handleTextSelection, 0));
+    els.contextScroll.addEventListener("mouseover", (event) => {
+      const mark = event.target.closest?.(".highlight-note:not(.pending)");
+      if (mark?.dataset.note) showNoteTooltip(mark, event);
+    });
+    els.contextScroll.addEventListener("mousemove", moveNoteTooltip);
+    els.contextScroll.addEventListener("mouseout", (event) => {
+      if (event.target.closest?.(".highlight-note")) hideNoteTooltip();
+    });
+    els.cancelSelectionNoteBtn.addEventListener("click", clearSelectionNote);
+    els.saveSelectionNoteBtn.addEventListener("click", saveSelectionNote);
+
+    window.addEventListener("keydown", (event) => {
+      if (
+        event.target instanceof HTMLButtonElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLInputElement ||
+        event.target?.isContentEditable
+      ) return;
+      const key = event.key.toLowerCase();
+      if (key === "j" || event.key === "ArrowLeft") move(-1);
+      if (key === "k" || event.key === "ArrowRight") move(1);
+      if (key === "s") saveDecision();
+      if (key === "r") resetContext("smooth");
+      if (key === "escape") clearSelectionNote();
+    });
+
+    window.addEventListener("message", (event) => {
+      if (event.source !== window.parent || !event.data) return;
+      if (event.data.type === "review-deck:init") {
+        loadHostCandidates(event.data.candidates);
+      }
+      if (event.data.type === "review-deck:saved") {
+        showToast("已写回拆解稿");
+      }
+      if (event.data.type === "review-deck:error") {
+        const review = currentReview();
+        if (review) {
+          review.saved = false;
+          review.dirty = true;
+          renderStatus();
+        }
+        showToast(event.data.message || "写回拆解稿失败");
+      }
+    });
+
+    render(true);
+    window.parent.postMessage({ type: "review-deck:ready" }, window.location.origin);
+  </script>
+</body>
+</html>

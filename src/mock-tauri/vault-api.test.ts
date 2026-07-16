@@ -73,6 +73,31 @@ describe('tryVaultApi', () => {
     expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/vault/ping')).toHaveLength(1)
   })
 
+  it('loads saved view definitions from the browser vault API', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = requestUrl(input)
+      if (url === '/api/vault/ping') return jsonResponse({ ok: true })
+      if (url === '/api/vault/views') {
+        expect(requestBody(init)).toEqual({ path: '/fixture' })
+        return jsonResponse([{
+          filename: 'atom-review.yml',
+          definition: {
+            name: 'Atom Review',
+            presentation: { type: 'custom', provider: 'review-deck' },
+            filters: { all: [] },
+          },
+        }])
+      }
+      throw new Error(`Unexpected fetch: ${url}`)
+    })
+    globalThis.fetch = fetchMock as typeof fetch
+    const { tryVaultApi } = await import('./vault-api')
+
+    await expect(tryVaultApi('list_views', { vaultPath: '/fixture' })).resolves.toEqual([
+      expect.objectContaining({ filename: 'atom-review.yml' }),
+    ])
+  })
+
   it('validates cached note content through the vault API', async () => {
     mockNoteContentFetch('# Alpha Project')
     const { tryVaultApi } = await import('./vault-api')

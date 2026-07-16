@@ -154,7 +154,12 @@ let mockSettings: Settings = {
   multi_workspace_enabled: null,
 }
 
-const DEFAULT_MOCK_VAULT_PATH = '/Users/mock/demo-vault-v2'
+declare const __MOCK_VAULT_OVERRIDE_PATH__: string | null | undefined
+
+const MOCK_VAULT_OVERRIDE_PATH = typeof __MOCK_VAULT_OVERRIDE_PATH__ !== 'undefined'
+  ? __MOCK_VAULT_OVERRIDE_PATH__
+  : null
+const DEFAULT_MOCK_VAULT_PATH = MOCK_VAULT_OVERRIDE_PATH ?? '/Users/mock/demo-vault-v2'
 const DEFAULT_MOCK_VAULT = {
   label: 'demo-vault-v2',
   path: DEFAULT_MOCK_VAULT_PATH,
@@ -673,8 +678,7 @@ export const mockHandlers: Record<string, (args: any) => any> = {
   set_last_vault_path: (args: { path: string }) => { mockLastVaultPath = args.path; return null },
   get_default_vault_path: () => '/Users/mock/Documents/Getting Started',
   check_vault_exists: (args: { path: string }) => {
-    // In mock mode, the demo-vault-v2 path always "exists"
-    return args.path.includes('demo-vault-v2')
+    return args.path === DEFAULT_MOCK_VAULT_PATH || args.path.includes('demo-vault-v2')
   },
   create_empty_vault: (args: { targetPath?: string; target_path?: string }) => {
     const targetPath = args.targetPath || args.target_path || '/Users/mock/Documents/My Vault'

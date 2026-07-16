@@ -20,6 +20,7 @@ mod tests {
             order: None,
             sort: None,
             list_properties_display: Vec::new(),
+            presentation: None,
             filters: FilterGroup::All(vec![FilterNode::Condition(FilterCondition {
                 field: "type".to_string(),
                 op: FilterOp::Equals,
@@ -56,6 +57,36 @@ filters:
             }
             _ => panic!("Expected All group"),
         }
+    }
+
+    #[test]
+    fn test_preserves_custom_presentation_configuration() {
+        let yaml = r#"
+name: Atom Review
+presentation:
+  type: custom
+  provider: review-deck
+  options:
+    sourceType: 文章拆解
+filters:
+  all: []
+"#;
+        let def: ViewDefinition = serde_yaml::from_str(yaml).unwrap();
+        let presentation = def.presentation.as_ref().unwrap();
+
+        assert_eq!(presentation.presentation_type, "custom");
+        assert_eq!(
+            presentation
+                .configuration
+                .get("provider")
+                .and_then(serde_yaml::Value::as_str),
+            Some("review-deck")
+        );
+
+        let serialized = serde_yaml::to_string(&def).unwrap();
+        assert!(serialized.contains("presentation:"));
+        assert!(serialized.contains("provider: review-deck"));
+        assert!(serialized.contains("sourceType:"));
     }
 
     #[test]

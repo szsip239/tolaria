@@ -1,0 +1,92 @@
+import assert from 'node:assert/strict'
+import os from 'node:os'
+import path from 'node:path'
+import test from 'node:test'
+
+import {
+  DEV_APP_CONFIG_NAMESPACE,
+  devConfigFiles,
+  parseDesktopDevArgs,
+  resolveDevConfigDir,
+} from './desktop-dev.mjs'
+
+test('uses an explicit vault path and preserves remaining Tauri arguments', () => {
+  const parsed = parseDesktopDevArgs([
+    '--vault',
+    '/tmp/review-vault',
+    '--',
+    '--no-watch',
+  ], {})
+
+  assert.deepEqual(parsed, {
+    vaultPath: '/tmp/review-vault',
+    tauriArgs: ['--no-watch'],
+  })
+})
+
+test('accepts the pnpm argument separator before desktop options', () => {
+  const parsed = parseDesktopDevArgs([
+    '--',
+    '--vault',
+    '/tmp/review-vault',
+  ], {})
+
+  assert.deepEqual(parsed, {
+    vaultPath: '/tmp/review-vault',
+    tauriArgs: [],
+  })
+})
+
+test('falls back to TOLARIA_DEV_VAULT when no vault argument is present', () => {
+  const parsed = parseDesktopDevArgs([], {
+    TOLARIA_DEV_VAULT: '/tmp/env-vault',
+  })
+
+  assert.equal(parsed.vaultPath, '/tmp/env-vault')
+  assert.deepEqual(parsed.tauriArgs, [])
+})
+
+test('rejects a missing development vault', () => {
+  assert.throws(
+    () => parseDesktopDevArgs([], {}),
+    /Provide --vault/,
+  )
+})
+
+test('uses the isolated Tolaria development namespace', () => {
+  const homeDir = path.join(path.sep, 'Users', 'test')
+
+  assert.equal(
+    resolveDevConfigDir({ HOME: homeDir }, 'darwin'),
+    path.join(homeDir, '.config', DEV_APP_CONFIG_NAMESPACE),
+  )
+})
+
+test('creates a single-vault development registry without onboarding prompts', () => {
+  const vaultPath = path.join(path.sep, 'tmp', 'review-vault')
+  const files = devConfigFiles(vaultPath)
+
+  assert.deepEqual(JSON.parse(files['vaults.json']), {
+    vaults: [{
+      label: 'review-vault',
+      path: vaultPath,
+      mounted: true,
+    }],
+    active_vault: vaultPath,
+    default_workspace_path: null,
+    hidden_defaults: [],
+  })
+  assert.equal(files['last-vault.txt'], vaultPath)
+  assert.deepEqual(JSON.parse(files['settings.json']), {
+    telemetry_consent: false,
+    ai_features_enabled: false,
+    ui_language: 'zh-CN',
+  })
+})
+
+test('uses the operating system temp directory when HOME is unavailable', () => {
+  assert.equal(
+    resolveDevConfigDir({}, 'darwin'),
+    path.join(os.tmpdir(), DEV_APP_CONFIG_NAMESPACE),
+  )
+})

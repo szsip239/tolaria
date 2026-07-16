@@ -27,7 +27,7 @@ async function checkVaultApi(): Promise<boolean> {
 
 interface VaultApiGetRequest {
   body: Record<string, unknown>
-  kind: 'all-content' | 'content' | 'entry' | 'list' | 'search'
+  kind: 'all-content' | 'content' | 'entry' | 'list' | 'search' | 'views'
 }
 
 interface VaultApiPostRequest {
@@ -143,6 +143,10 @@ function buildVaultApiRequest(cmd: string, args?: Record<string, unknown>): Vaul
   if (!args) return null
   if (cmd === 'list_vault') return buildListRequest(args, false)
   if (cmd === 'reload_vault') return buildListRequest(args, true)
+  if (cmd === 'list_views') {
+    const path = argText(commandArgs(args), 'vaultPath')
+    return path ? { kind: 'views', body: { path } } : null
+  }
   if (cmd === 'search_vault') return buildSearchRequest(args)
   if (isPathQueryCommand(cmd)) return buildPathQueryRequest(cmd, args)
   return buildPostRequest(cmd, args)
@@ -168,6 +172,7 @@ function isGetRequest(request: VaultApiRequest): request is VaultApiGetRequest {
     || request.kind === 'entry'
     || request.kind === 'list'
     || request.kind === 'search'
+    || request.kind === 'views'
 }
 
 function fetchVaultApiGetRequest(request: VaultApiGetRequest): Promise<Response> {
@@ -182,6 +187,9 @@ function fetchVaultApiGetRequest(request: VaultApiGetRequest): Promise<Response>
   }
   if (request.kind === 'list') {
     return fetch('/api/vault/list', buildFetchOptions(request))
+  }
+  if (request.kind === 'views') {
+    return fetch('/api/vault/views', buildFetchOptions(request))
   }
   return fetch('/api/vault/search', buildFetchOptions(request))
 }

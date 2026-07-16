@@ -68,6 +68,9 @@ pnpm dev
 # Run with Tauri (full app, requires Rust)
 pnpm tauri dev
 
+# Run the isolated desktop development app against a specific vault
+pnpm dev:desktop -- --vault /absolute/path/to/vault
+
 # Run tests
 pnpm test    # Vitest unit tests
 cargo test   # Rust tests (from src-tauri/)
@@ -79,6 +82,13 @@ cargo test --manifest-path src-tauri/Cargo.toml
 pnpm playwright:smoke       # Curated Playwright core smoke lane (~5 min)
 pnpm playwright:regression  # Full Playwright regression suite
 ```
+
+`pnpm dev:desktop` writes only to Tolaria's development config namespace
+(`com.tolaria.app.dev`) and starts the separately identified `Tolaria Dev`
+application. Keep the command running during normal development: Vite hot
+updates renderer code in the existing desktop window, and Tauri performs an
+incremental rebuild/relaunch when Rust code changes. Packaging and installation
+are release checks, not part of the normal edit loop.
 
 ## Chunk Sidecar Validation
 

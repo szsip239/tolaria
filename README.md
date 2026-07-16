@@ -139,6 +139,18 @@ Open `http://localhost:5173` for the browser-based mock mode, or run the native 
 pnpm tauri dev
 ```
 
+For day-to-day desktop work against a specific local vault, use the isolated
+development app and config namespace:
+
+```bash
+pnpm dev:desktop -- --vault /absolute/path/to/vault
+```
+
+Keep this process running while editing. Vite updates renderer changes in the
+open `Tolaria Dev` window, while Tauri incrementally rebuilds and relaunches
+after Rust changes. This does not install or overwrite the release app.
+`pnpm tauri build` is only needed when producing an installable release bundle.
+
 ## Tech Docs
 
 - 📐 [ARCHITECTURE.md](docs/ARCHITECTURE.md) — System design, tech stack, data flow

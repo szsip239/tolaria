@@ -97,4 +97,29 @@ describe('collectionFromSelection', () => {
       properties: ['Owner'],
     })
   })
+
+  it('preserves a custom presentation provider for an installed collection surface', () => {
+    const view = makeView({
+      presentation: {
+        type: 'custom',
+        provider: 'review-deck',
+        options: {
+          sourceType: '文章拆解',
+        },
+      },
+    } as Partial<ViewDefinition>)
+
+    const collection = collectionFromSelection(
+      { kind: 'view', filename: view.filename },
+      { views: [view] },
+    )
+
+    expect(collection.presentation).toEqual({
+      type: 'custom',
+      provider: 'review-deck',
+      options: {
+        sourceType: '文章拆解',
+      },
+    })
+  })
 })

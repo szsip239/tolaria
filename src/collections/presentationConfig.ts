@@ -1,7 +1,9 @@
 import type { ViewDefinition } from '../types'
 import {
+  COLLECTION_PRESENTATION_CUSTOM,
   COLLECTION_PRESENTATION_LIST,
   type CollectionPresentationConfig,
+  type CustomCollectionPresentationConfig,
   type ListCollectionPresentationConfig,
 } from './collectionTypes'
 
@@ -27,6 +29,16 @@ function listPresentation(source: UnknownRecord, fallback: ListCollectionPresent
   }
 }
 
+function customPresentation(source: UnknownRecord): CustomCollectionPresentationConfig | null {
+  const provider = nullableString(source.provider)
+  if (!provider) return null
+  return {
+    type: COLLECTION_PRESENTATION_CUSTOM,
+    provider,
+    options: isRecord(source.options) ? source.options : {},
+  }
+}
+
 export function defaultListPresentation(): ListCollectionPresentationConfig {
   return { type: COLLECTION_PRESENTATION_LIST, sort: null, properties: [] }
 }
@@ -39,6 +51,7 @@ export function presentationFromViewDefinition(definition: ViewDefinition): Coll
   }
   const rawPresentation = Reflect.get(definition as unknown as UnknownRecord, 'presentation')
   if (!isRecord(rawPresentation)) return fallback
-  if (rawPresentation.type !== COLLECTION_PRESENTATION_LIST) return fallback
-  return listPresentation(rawPresentation, fallback)
+  if (rawPresentation.type === COLLECTION_PRESENTATION_LIST) return listPresentation(rawPresentation, fallback)
+  if (rawPresentation.type === COLLECTION_PRESENTATION_CUSTOM) return customPresentation(rawPresentation) ?? fallback
+  return fallback
 }

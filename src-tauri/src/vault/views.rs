@@ -3,6 +3,7 @@ use regex::{Regex, RegexBuilder};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::io::ErrorKind;
@@ -16,6 +17,14 @@ use super::view_value_conversions::{
     yaml_value_to_string_vec,
 };
 use super::VaultEntry;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ViewPresentationDefinition {
+    #[serde(rename = "type")]
+    pub presentation_type: String,
+    #[serde(flatten)]
+    pub configuration: BTreeMap<String, serde_yaml::Value>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ViewDefinition {
@@ -34,6 +43,8 @@ pub struct ViewDefinition {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub list_properties_display: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub presentation: Option<ViewPresentationDefinition>,
     pub filters: FilterGroup,
 }
 

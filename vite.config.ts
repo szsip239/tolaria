@@ -7,6 +7,7 @@ import {
   mkdirSync,
   openSync,
   opendirSync,
+  readdirSync,
   readFileSync,
   renameSync,
   unlinkSync,
@@ -18,6 +19,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import matter from 'gray-matter'
+import { parse as parseYaml } from 'yaml'
 
 // --- Vault API middleware (dev only) ---
 
@@ -692,6 +694,32 @@ async function handleVaultList(url: URL, req: IncomingMessage, res: ServerRespon
   return handleVaultReadCommand({ cmd: 'list_vault', pathname: '/api/vault/list', req, res, url })
 }
 
+async function handleVaultViews(url: URL, req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+  if (!isPostRoute(url, req, '/api/vault/views')) return false
+  try {
+    const { path: vaultPath } = await readJsonBody<{ path?: string }>(req)
+    if (!vaultPath) {
+      sendJson(res, { error: 'Missing vault path' }, 400)
+      return true
+    }
+    const viewsPath = path.join(vaultPath, 'views')
+    if (!pathExists(viewsPath)) {
+      sendJson(res, [])
+      return true
+    }
+    const views = readdirSync(viewsPath, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.ya?ml$/i.test(entry.name))
+      .map((entry) => ({
+        filename: entry.name,
+        definition: parseYaml(readUtf8File(path.join(viewsPath, entry.name))),
+      }))
+    sendJson(res, views)
+  } catch (err: unknown) {
+    sendCaughtError(res, err, 'View load failed')
+  }
+  return true
+}
+
 async function handleVaultContent(url: URL, req: IncomingMessage, res: ServerResponse): Promise<boolean> {
   return handleVaultReadCommand({ cmd: 'get_note_content', pathname: '/api/vault/content', req, res, url })
 }
@@ -886,6 +914,7 @@ async function handleVaultApiRequest(req: IncomingMessage, res: ServerResponse):
     () => Promise.resolve(handleVaultPing(url, res)),
     () => handleVaultCommand(url, req, res),
     () => handleVaultList(url, req, res),
+    () => handleVaultViews(url, req, res),
     () => handleVaultContent(url, req, res),
     () => handleVaultAllContent(url, req, res),
     () => handleVaultEntry(url, req, res),
@@ -971,7 +1000,12 @@ export default defineConfig({
   define: {
     ...(process.env.CI || (process.env.TAURI_PLATFORM && !process.env.TAURI_DEBUG)
       ? {}
-      : { __DEMO_VAULT_PATH__: JSON.stringify(path.resolve(__dirname, 'demo-vault-v2')) }),
+      : {
+        __DEMO_VAULT_PATH__: JSON.stringify(
+          process.env.TOLARIA_DEMO_VAULT_PATH ?? path.resolve(__dirname, 'demo-vault-v2'),
+        ),
+        __MOCK_VAULT_OVERRIDE_PATH__: JSON.stringify(process.env.TOLARIA_DEMO_VAULT_PATH ?? null),
+      }),
   },
 
   // Prevent vite from obscuring Rust errors

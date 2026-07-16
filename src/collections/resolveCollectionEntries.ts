@@ -4,6 +4,7 @@ import {
   type RelationshipGroup,
   buildRelationshipGroups,
   filterEntries,
+  filterEntriesForViewFile,
 } from '../utils/noteListHelpers'
 import type { CollectionDefinition } from './collectionTypes'
 
@@ -35,6 +36,17 @@ function currentEntityEntry(collection: CollectionDefinition, entries: VaultEntr
   return entries.find((entry) => entry.path === selectedEntry.path) ?? selectedEntry
 }
 
+function collectionFilterEntries(
+  collection: CollectionDefinition,
+  entries: VaultEntry[],
+  options: ResolveCollectionEntriesOptions,
+): VaultEntry[] {
+  if (collection.origin === 'saved-view' && collection.view) {
+    return filterEntriesForViewFile(entries, collection.view)
+  }
+  return filterEntries(entries, collection.selection, options)
+}
+
 export function resolveCollectionEntries(
   collection: CollectionDefinition,
   entries: VaultEntry[],
@@ -50,7 +62,7 @@ export function resolveCollectionEntries(
   }
 
   return {
-    entries: specialFilterEntries(collection, options) ?? filterEntries(entries, collection.selection, options),
+    entries: specialFilterEntries(collection, options) ?? collectionFilterEntries(collection, entries, options),
     entityEntry: null,
     relationshipGroups: [],
   }

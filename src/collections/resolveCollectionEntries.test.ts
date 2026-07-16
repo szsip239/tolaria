@@ -62,6 +62,28 @@ describe('resolveCollectionEntries', () => {
     expect(resolved.entries.map((entry) => entry.title)).toEqual(['Alpha'])
   })
 
+  it('resolves a saved view from the collection without requiring the view registry again', () => {
+    const entries = [
+      makeEntry({ path: '/vault/alpha.md', title: 'Alpha', isA: 'Project' }),
+      makeEntry({ path: '/vault/beta.md', title: 'Beta', isA: 'Note' }),
+    ]
+    const view: ViewFile = {
+      filename: 'projects.yml',
+      definition: {
+        name: 'Projects',
+        icon: null,
+        color: null,
+        sort: null,
+        filters: { all: [{ field: 'type', op: 'equals', value: 'Project' }] },
+      },
+    }
+    const collection = collectionFromSelection({ kind: 'view', filename: view.filename }, { views: [view] })
+
+    const resolved = resolveCollectionEntries(collection, entries)
+
+    expect(resolved.entries.map((entry) => entry.title)).toEqual(['Alpha'])
+  })
+
   it('resolves neighborhood collections into grouped relationship data', () => {
     const alpha = makeEntry({
       path: '/vault/alpha.md',

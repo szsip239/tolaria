@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 describe('Tauri Content Security Policy', () => {
@@ -56,5 +57,19 @@ describe('Tauri Content Security Policy', () => {
     expect(devCsp).toContain("'unsafe-inline'")
     expect(devCsp).toContain("'unsafe-eval'")
     expect(devCsp).toContain('ws://localhost:5202')
+  })
+
+  it('allows every inline script shipped by the Review Deck presentation', () => {
+    const config = JSON.parse(readFileSync(`${process.cwd()}/src-tauri/tauri.conf.json`, 'utf8'))
+    const productionCsp = config.app.security.csp as Record<string, string>
+    const html = readFileSync(`${process.cwd()}/public/review-deck/index.html`, 'utf8')
+    const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
+      .map((match) => match[1])
+
+    expect(inlineScripts).not.toHaveLength(0)
+    for (const script of inlineScripts) {
+      const hash = createHash('sha256').update(script).digest('base64')
+      expect(productionCsp['script-src']).toContain(`'sha256-${hash}'`)
+    }
   })
 })
