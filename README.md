@@ -147,9 +147,22 @@ pnpm dev:desktop -- --vault /absolute/path/to/vault
 ```
 
 Keep this process running while editing. Vite updates renderer changes in the
-open the separately branded `Knowledge Tolaria Dev` window, while Tauri incrementally rebuilds and relaunches
-after Rust changes. This does not install or overwrite the release app.
-`pnpm tauri build` is only needed when producing an installable release bundle.
+separately branded `Knowledge Tolaria Dev` window, while Tauri incrementally
+rebuilds and relaunches after Rust changes. This does not install or overwrite
+the release app.
+
+To install a standalone snapshot in Applications, build and copy the development bundle:
+
+```bash
+pnpm tauri build --config src-tauri/tauri.dev.conf.json --bundles app
+ditto "src-tauri/target/release/bundle/macos/Knowledge Tolaria Dev.app" "/Applications/Knowledge Tolaria Dev.app"
+codesign --force --deep --sign - "/Applications/Knowledge Tolaria Dev.app"
+open -a "Knowledge Tolaria Dev"
+```
+
+The installed snapshot is isolated from the official app and cannot consume
+official Tolaria updates. Use `pnpm dev:desktop` for hot reload; rebuild and
+copy the standalone app when a stable local checkpoint is ready for daily use.
 
 ## Tech Docs
 

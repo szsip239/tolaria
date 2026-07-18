@@ -90,6 +90,19 @@ updates renderer code in the existing desktop window, and Tauri performs an
 incremental rebuild/relaunch when Rust code changes. Packaging and installation
 are release checks, not part of the normal edit loop.
 
+For a standalone macOS development snapshot that launches from Applications:
+
+```bash
+pnpm tauri build --config src-tauri/tauri.dev.conf.json --bundles app
+ditto "src-tauri/target/release/bundle/macos/Knowledge Tolaria Dev.app" "/Applications/Knowledge Tolaria Dev.app"
+codesign --force --deep --sign - "/Applications/Knowledge Tolaria Dev.app"
+open -a "Knowledge Tolaria Dev"
+```
+
+This bundle retains the development config namespace, uses its own deep-link
+scheme, and blocks official-app updates. It is a release-mode snapshot rather
+than a hot-reload process; rebuild and copy it after code changes.
+
 ## Chunk Sidecar Validation
 
 The experimental `.chunk/config.json` mirrors the portable parts of the local git hook gate as named validations. Use it for inner-loop checks before running the full pre-push hook:

@@ -1,5 +1,21 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Knowledge Tolaria Dev",
-  "identifier": "club.refactoring.tolaria.dev"
+  "identifier": "club.refactoring.tolaria.dev",
+  "bundle": {
+    "createUpdaterArtifacts": false,
+    "macOS": {
+      "infoPlist": "Info.dev.plist"
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["knowledge-tolaria-dev"]
+      }
+    },
+    "updater": {
+      "endpoints": []
+    }
+  }
 }

@@ -414,6 +414,9 @@ pub async fn check_for_app_update(
     app_handle: tauri::AppHandle,
     release_channel: Option<String>,
 ) -> Result<Option<crate::app_updater::AppUpdateMetadata>, String> {
+    if !crate::app_config::app_updates_enabled() {
+        return Ok(None);
+    }
     crate::app_updater::check_for_app_update(app_handle, release_channel).await
 }
 
@@ -434,6 +437,9 @@ pub async fn download_and_install_app_update(
     expected_version: String,
     on_event: Channel<crate::app_updater::AppUpdateDownloadEvent>,
 ) -> Result<(), String> {
+    if !crate::app_config::app_updates_enabled() {
+        return Err("App updates are disabled for development builds".into());
+    }
     crate::app_updater::download_and_install_app_update(
         app_handle,
         release_channel,

@@ -81,6 +81,7 @@ test('creates a single-vault development registry without onboarding prompts', (
   assert.deepEqual(JSON.parse(files['settings.json']), {
     telemetry_consent: false,
     ai_features_enabled: true,
+    automatic_update_checks_enabled: false,
     ui_language: 'zh-CN',
   })
 })
@@ -91,6 +92,14 @@ test('brands the development app separately from the installed Tolaria app', () 
 
   assert.equal(config.productName, 'Knowledge Tolaria Dev')
   assert.equal(config.identifier, 'club.refactoring.tolaria.dev')
+  assert.equal(config.bundle.createUpdaterArtifacts, false)
+  assert.equal(config.bundle.macOS.infoPlist, 'Info.dev.plist')
+  assert.deepEqual(config.plugins['deep-link'].desktop.schemes, ['knowledge-tolaria-dev'])
+  assert.deepEqual(config.plugins.updater.endpoints, [])
+
+  const infoPlistPath = path.join(import.meta.dirname, '..', 'src-tauri', config.bundle.macOS.infoPlist)
+  const infoPlist = fs.readFileSync(infoPlistPath, 'utf8')
+  assert.match(infoPlist, /<key>TOLARIA_APP_CONFIG_NAMESPACE<\/key>\s*<string>com\.tolaria\.app\.dev<\/string>/)
 })
 
 test('uses the operating system temp directory when HOME is unavailable', () => {

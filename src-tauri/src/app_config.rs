@@ -33,6 +33,10 @@ impl AppConfigPolicy {
         }
     }
 
+    fn app_updates_enabled_for(&self, requested_namespace: Option<&str>) -> bool {
+        self.current_namespace_for(requested_namespace) != self.development_namespace
+    }
+
     fn namespace_read_order(&self) -> &[AppConfigNamespace] {
         &self.namespace_read_order
     }
@@ -51,6 +55,11 @@ fn app_config_policy() -> &'static AppConfigPolicy {
         serde_json::from_str(APP_CONFIG_POLICY_JSON)
             .expect("mcp-server/app-config-policy.json must be valid")
     })
+}
+
+pub(crate) fn app_updates_enabled() -> bool {
+    app_config_policy()
+        .app_updates_enabled_for(std::env::var(APP_CONFIG_NAMESPACE_ENV).ok().as_deref())
 }
 
 fn app_config_dir() -> Result<PathBuf, String> {
@@ -226,6 +235,12 @@ mod tests {
             app_config_policy().current_namespace_for(Some("com.example.other")),
             "com.tolaria.app"
         );
+    }
+
+    #[test]
+    fn development_namespace_disables_app_updates() {
+        assert!(!app_config_policy().app_updates_enabled_for(Some("com.tolaria.app.dev")));
+        assert!(app_config_policy().app_updates_enabled_for(None));
     }
 
     #[test]
