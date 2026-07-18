@@ -88,7 +88,7 @@ export function devConfigFiles(vaultPath) {
     'last-vault.txt': vaultPath,
     'settings.json': `${JSON.stringify({
       telemetry_consent: false,
-      ai_features_enabled: false,
+      ai_features_enabled: true,
       ui_language: 'zh-CN',
     }, null, 2)}\n`,
   }

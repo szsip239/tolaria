@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -79,9 +80,17 @@ test('creates a single-vault development registry without onboarding prompts', (
   assert.equal(files['last-vault.txt'], vaultPath)
   assert.deepEqual(JSON.parse(files['settings.json']), {
     telemetry_consent: false,
-    ai_features_enabled: false,
+    ai_features_enabled: true,
     ui_language: 'zh-CN',
   })
+})
+
+test('brands the development app separately from the installed Tolaria app', () => {
+  const configPath = path.join(import.meta.dirname, '..', 'src-tauri', 'tauri.dev.conf.json')
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+
+  assert.equal(config.productName, 'Knowledge Tolaria Dev')
+  assert.equal(config.identifier, 'club.refactoring.tolaria.dev')
 })
 
 test('uses the operating system temp directory when HOME is unavailable', () => {

@@ -84,7 +84,7 @@ pnpm playwright:regression  # Full Playwright regression suite
 ```
 
 `pnpm dev:desktop` writes only to Tolaria's development config namespace
-(`com.tolaria.app.dev`) and starts the separately identified `Tolaria Dev`
+(`com.tolaria.app.dev`) and starts the separately identified `Knowledge Tolaria Dev`
 application. Keep the command running during normal development: Vite hot
 updates renderer code in the existing desktop window, and Tauri performs an
 incremental rebuild/relaunch when Rust code changes. Packaging and installation
